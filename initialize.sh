@@ -8,8 +8,8 @@ export cc_TARGET=i686-elf
 export PATH="$cc_PREFIX/bin:$PATH"
 
 # Define packages for Ubuntu and Arch
-UBUNTU_PACKAGES=("build-essential" "bison" "flex" "libgmp3-dev" "libmpc-dev" "libmpfr-dev" "texinfo")
-ARCH_PACKAGES=("base-devel" "gmp" "libmpc" "mpfr")
+UBUNTU_PACKAGES=("build-essential" "bison" "flex" "libgmp3-dev" "libmpc-dev" "libmpfr-dev" "texinfo" "grub-common" "qemu-system-x86" "qemu-system-gui" "grub-pc-bin" "xorriso")
+ARCH_PACKAGES=("base-devel" "gmp" "libmpc" "mpfr" "grub" "xorriso" "qemu" "qemu-ui")
 
 # Detect the operating system
 if [ -f /etc/os-release ]; then
@@ -183,3 +183,4 @@ echo "Environment variables:"
 echo "cc_PREFIX = $cc_PREFIX"
 echo "cc_TARGET = $cc_TARGET"
 export PATH="$cc_PREFIX/bin/:$PATH"
+cd $cc_PREFIX/..
