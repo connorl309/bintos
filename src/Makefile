@@ -8,17 +8,17 @@ BUILD_DIR := build
 # If you change this you have to change the grub.cfg as well.
 PROJ_NAME = output.bin
 
-# Find all .s and .c files in the source directory
-SRCS := $(shell find $(SRC_DIR) -name '*.s' -o -name '*.c')
+# Find all .asm and .c files in the source directory
+SRCS := $(shell find $(SRC_DIR) -name '*.asm' -o -name '*.c')
 
 # Generate list of object files, preserving source directory structure
-OBJS := $(SRCS:$(SRC_DIR)/%.s=$(BUILD_DIR)/%.o)
+OBJS := $(SRCS:$(SRC_DIR)/%.asm=$(BUILD_DIR)/%.o)
 OBJS := $(OBJS:$(SRC_DIR)/%.c=$(BUILD_DIR)/%.o)
 
 # Compiler, assembler, and linker
-AS := i686-elf-as
+AS := nasm
 CC := i686-elf-gcc
-ASFLAGS :=
+ASFLAGS := -felf32 # Important!
 CFLAGS := -std=gnu99 -ffreestanding -Wall -Wextra
 LDFLAGS := -T linker.ld -o output.bin -ffreestanding -nostdlib -lgcc
 
@@ -31,14 +31,14 @@ all: $(BUILD_DIR) $(OBJS)
 	cp $(PROJ_NAME) build/isodir/boot/
 	cp grub.cfg build/isodir/boot/grub/
 	@grub-mkrescue -o KERNEL_ISO.iso build/isodir
-	qemu-system-i386 -cdrom KERNEL_ISO.iso
+	qemu-system-i386 -s -D ./debug.log -d int,cpu_reset -cdrom KERNEL_ISO.iso
 
 # Rule to create build directory
 $(BUILD_DIR):
 	mkdir -p $(BUILD_DIR)
 
 # Rule to compile .s files into .o, maintaining path structure
-$(BUILD_DIR)/%.o: $(SRC_DIR)/%.s
+$(BUILD_DIR)/%.o: $(SRC_DIR)/%.asm
 	mkdir -p $(dir $@)
 	$(AS) $(ASFLAGS) -o $@ $<
 

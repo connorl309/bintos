@@ -53,3 +53,8 @@ dkms.conf
 
 cc/**
 src/build/
+
+.clangd
+*.log
+*.bin
+*.iso
