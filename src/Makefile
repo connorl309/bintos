@@ -25,13 +25,14 @@ LDFLAGS := -T linker.ld -o output.bin -ffreestanding -nostdlib -lgcc
 # Default target
 all: $(BUILD_DIR) $(OBJS)
 	$(CC) $(LDFLAGS) $(OBJS)
-	@grub-file --is-x86-multiboot $(PROJ_NAME) && echo "Multiboot check passed!" || { echo "Multiboot check failed!" >&2; exit 1; }
-	@echo "\033[95mKernel built as binary! Multiboot formatting not yet done.\033[0m"
+	@grub-file --is-x86-multiboot $(PROJ_NAME) && echo "\033[95mMultiboot check passed!\033[0m" || { echo "\033[31mMultiboot check failed!\033[0m" >&2; exit 1; }
 	mkdir -p build/isodir/boot/grub
 	cp $(PROJ_NAME) build/isodir/boot/
 	cp grub.cfg build/isodir/boot/grub/
 	@grub-mkrescue -o KERNEL_ISO.iso build/isodir
-	qemu-system-i386 -s -D ./debug.log -d int,cpu_reset -cdrom KERNEL_ISO.iso
+	qemu-system-i386 -cdrom KERNEL_ISO.iso
+# the below line is for debugging CPU activity
+# qemu-system-i386 -s -D ./debug.log -d int,cpu_reset -cdrom KERNEL_ISO.iso
 
 # Rule to create build directory
 $(BUILD_DIR):

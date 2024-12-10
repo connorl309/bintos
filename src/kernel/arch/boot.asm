@@ -1,7 +1,8 @@
 ; Declare constants for the multiboot header.
 MBALIGN  equ  1 << 0            ; align loaded modules on page boundaries
 MEMINFO  equ  1 << 1            ; provide memory map
-MBFLAGS  equ  MBALIGN | MEMINFO ; this is the Multiboot 'flag' field
+VIDEO	 equ 1 << 2			; provide framebuffer info
+MBFLAGS  equ  MBALIGN | MEMINFO | VIDEO ; this is the Multiboot 'flag' field
 MAGIC    equ  0x1BADB002        ; 'magic number' lets bootloader find the header
 CHECKSUM equ -(MAGIC + MBFLAGS)   ; checksum of above, to prove we are multiboot
 
@@ -15,6 +16,11 @@ align 4
 	dd MAGIC
 	dd MBFLAGS
 	dd CHECKSUM
+	times 5 dd 0
+	dd 0 ; set graphics mode, not text mode
+	dd 1024 ; width
+	dd 768 ; height
+	dd 32 ; 32 bits of color per pixel
 
 ; The multiboot standard does not define the value of the stack pointer register
 ; (esp) and it is up to the kernel to provide a stack. This allocates room for a
@@ -56,14 +62,12 @@ _start:
 	; in assembly as languages such as C cannot function without a stack.
 	mov esp, stack_top
 
-	; This is a good place to initialize crucial processor state before the
-	; high-level kernel is entered. It's best to minimize the early
-	; environment where crucial features are offline. Note that the
-	; processor is not fully initialized yet: Features such as floating
-	; point instructions and instruction set extensions are not initialized
-	; yet. The GDT should be loaded here. Paging should be enabled here.
-	; C++ features such as global constructors and exceptions will require
-	; runtime support to work as well.
+	; Grab the framebuffer from Multiboot header
+	; per multiboot spec, GRUB passes us the pointer to the multiboot header
+	; inside ebx.
+	; https://www.gnu.org/software/grub/manual/multiboot/multiboot.html#Boot-information-format
+	add ebx, 22
+
 
 	; Enter the high-level kernel. The ABI requires the stack is 16-byte
 	; aligned at the time of the call instruction (which afterwards pushes

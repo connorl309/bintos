@@ -28,12 +28,16 @@ static uint64_t create_descriptor(uint32_t base, uint32_t limit, uint16_t flag) 
 // Adds an entry to the GDT, incrementally, each call
 bool add_gdt_entry(uint32_t base, uint32_t limit, uint16_t flag) {
     // REQUIRED setup for lgdt instruction.
+    // The LGDT instruction parameter expects a pointer
+    // to a struct containing `offset` and `size`, where
+    // `size` MUST be the size of our entire GDT - 1.
     gdtr.offset = (uint32_t)gdt_table;
-    gdtr.size = (sizeof(uint64_t) * GDT_ENTRIES) - 1;
 
     static uint8_t index = 0;
+    
     if (index < GDT_ENTRIES) {
         gdt_table[index++] = create_descriptor(base, limit, flag);
+        gdtr.size = (sizeof(uint64_t) * index) - 1;
         return true;
     } else {
         return false;
