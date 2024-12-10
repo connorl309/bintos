@@ -62,13 +62,6 @@ _start:
 	; in assembly as languages such as C cannot function without a stack.
 	mov esp, stack_top
 
-	; Grab the framebuffer from Multiboot header
-	; per multiboot spec, GRUB passes us the pointer to the multiboot header
-	; inside ebx.
-	; https://www.gnu.org/software/grub/manual/multiboot/multiboot.html#Boot-information-format
-	add ebx, 22
-
-
 	; Enter the high-level kernel. The ABI requires the stack is 16-byte
 	; aligned at the time of the call instruction (which afterwards pushes
 	; the return pointer of size 4 bytes). The stack was originally 16-byte

@@ -19,7 +19,7 @@ OBJS := $(OBJS:$(SRC_DIR)/%.c=$(BUILD_DIR)/%.o)
 AS := nasm
 CC := i686-elf-gcc
 ASFLAGS := -felf32 # Important!
-CFLAGS := -std=gnu99 -ffreestanding -Wall -Wextra
+CFLAGS := -std=gnu99 -ffreestanding -Wall -Wextra -O2
 LDFLAGS := -T linker.ld -o output.bin -ffreestanding -nostdlib -lgcc
 
 # Default target
@@ -30,7 +30,7 @@ all: $(BUILD_DIR) $(OBJS)
 	cp $(PROJ_NAME) build/isodir/boot/
 	cp grub.cfg build/isodir/boot/grub/
 	@grub-mkrescue -o KERNEL_ISO.iso build/isodir
-	qemu-system-i386 -cdrom KERNEL_ISO.iso
+	qemu-system-i386 -cdrom KERNEL_ISO.iso -serial file:serial_out.log
 # the below line is for debugging CPU activity
 # qemu-system-i386 -s -D ./debug.log -d int,cpu_reset -cdrom KERNEL_ISO.iso
 

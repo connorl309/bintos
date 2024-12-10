@@ -2,6 +2,7 @@
 #include <stddef.h>
 #include <stdint.h>
 #include "gdt.h"
+#include "../serial/serial.h"
 
 /* Hardware text mode color constants. */
 // enum vga_color {
@@ -100,15 +101,15 @@ extern void gdt_flush();
 // other helpers
 extern void die();
 
-uint64_t* frame_buffer_ptr = NULL;
+volatile uint8_t* multiboot_info;
 
 void kernel_main(void) 
 {
 	// Before we do *anything*, we need to grab the
 	// Multiboot frame buffer pointer out of ebx.
 	__asm__ volatile (
-		"movl 88(%%ebx), %0"
-		: "=r" (frame_buffer_ptr) // Output into frame_buffer_ptr
+		"movl 0(%%ebx), %0"
+		: "=r" (multiboot_info) // Output into multiboot_info
 		: // No inputs
 		: "ebx" // Used registers - ebx
 	);
@@ -125,6 +126,9 @@ void kernel_main(void)
 	// TODO: Add a TSS section - can't just throw this wherever.
 	if (s) {
 		gdt_flush();
+		if (init_serial(COM1)) {
+			serial_log(COM1, "Initialized serial and setup GDT.");
+		}
 	} else {
 		die();
 	}
@@ -132,4 +136,11 @@ void kernel_main(void)
 	// Because we're booting into graphical mode from Multiboot, we don't have access to the VGA text buffer. As such
 	// we have to actually draw the glyphs and characters from a font map.
 	// This is TODO.
+	if (multiboot_info) {
+		uint64_t* framebuffer = (uint64_t*)(multiboot_info + 88);
+		uint32_t fb_pitch = *(uint32_t*)(multiboot_info + 96);
+		uint32_t fb_width = *(uint32_t*)(multiboot_info + 100);
+		uint32_t fb_height = *(uint32_t*)(multiboot_info + 104);
+		uint32_t fb_bpp = *(uint32_t*)(multiboot_info + 108);
+	}
 }
