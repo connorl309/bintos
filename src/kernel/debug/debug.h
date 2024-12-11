@@ -11,6 +11,7 @@ typedef enum {
     INFO,
     WARN,
     ERROR,
+    DEBUG,
     NUM_LEVELS
 } log_level;
 

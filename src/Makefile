@@ -30,7 +30,7 @@ all: $(BUILD_DIR) $(OBJS)
 	cp $(PROJ_NAME) build/isodir/boot/
 	cp grub.cfg build/isodir/boot/grub/
 	@grub-mkrescue -o KERNEL_ISO.iso build/isodir
-	qemu-system-i386 -cdrom KERNEL_ISO.iso -serial file:serial_out.log
+	qemu-system-i386 -cdrom KERNEL_ISO.iso -serial file:output.log
 # the below line is for debugging CPU activity
 # qemu-system-i386 -s -D ./debug.log -d int,cpu_reset -cdrom KERNEL_ISO.iso
 
@@ -50,7 +50,7 @@ $(BUILD_DIR)/%.o: $(SRC_DIR)/%.c
 
 # Clean up generated files
 clean:
-	rm -rf $(BUILD_DIR) $(PROJ_NAME) KERNEL_ISO.iso
+	rm -rf $(BUILD_DIR) $(PROJ_NAME) KERNEL_ISO.iso *.log
 
 
 .PHONY: all clean

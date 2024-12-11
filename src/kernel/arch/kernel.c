@@ -2,6 +2,7 @@
 #include <stddef.h>
 #include <stdint.h>
 #include "gdt.h"
+#include "../debug/debug.h"
 #include "../serial/serial.h"
 
 /* Hardware text mode color constants. */
@@ -96,9 +97,8 @@
 // 	terminal_write(data, strlen(data));
 // }
 
-// GDT
+// GDT, other helpers
 extern void gdt_flush();
-// other helpers
 extern void die();
 
 volatile uint8_t* multiboot_info;
@@ -127,7 +127,7 @@ void kernel_main(void)
 	if (s) {
 		gdt_flush();
 		if (init_serial(COM1)) {
-			serial_log(COM1, "Initialized serial and setup GDT.");
+			log(INFO, "COM1 initialized!");
 		}
 	} else {
 		die();
@@ -137,6 +137,7 @@ void kernel_main(void)
 	// we have to actually draw the glyphs and characters from a font map.
 	// This is TODO.
 	if (multiboot_info) {
+		log(DEBUG, "Multiboot pointer non-null, setting up video stuff");
 		uint64_t* framebuffer = (uint64_t*)(multiboot_info + 88);
 		uint32_t fb_pitch = *(uint32_t*)(multiboot_info + 96);
 		uint32_t fb_width = *(uint32_t*)(multiboot_info + 100);
