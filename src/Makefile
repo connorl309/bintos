@@ -19,18 +19,26 @@ OBJS := $(OBJS:$(SRC_DIR)/%.c=$(BUILD_DIR)/%.o)
 AS := nasm
 CC := i686-elf-gcc
 ASFLAGS := -felf32 # Important!
-CFLAGS := -std=gnu99 -ffreestanding -Wall -Wextra -O2
+CFLAGS := -std=gnu99 -ffreestanding -Wall -Wextra -Wno-int-conversion
+QEMU_FLAGS = -cdrom KERNEL_ISO.iso -serial file:output.log
 LDFLAGS := -T linker.ld -o output.bin -ffreestanding -nostdlib -lgcc
 
 # Default target
-all: $(BUILD_DIR) $(OBJS)
+all: exec
+
+debug: CFLAGS += -g
+debug: QEMU_FLAGS += -s -S
+debug: all
+
+exec: $(BUILD_DIR) $(OBJS)
 	$(CC) $(LDFLAGS) $(OBJS)
 	@grub-file --is-x86-multiboot $(PROJ_NAME) && echo "\033[95mMultiboot check passed!\033[0m" || { echo "\033[31mMultiboot check failed!\033[0m" >&2; exit 1; }
 	mkdir -p build/isodir/boot/grub
 	cp $(PROJ_NAME) build/isodir/boot/
 	cp grub.cfg build/isodir/boot/grub/
 	@grub-mkrescue -o KERNEL_ISO.iso build/isodir
-	qemu-system-i386 -cdrom KERNEL_ISO.iso -serial file:output.log
+	qemu-system-i386 $(QEMU_FLAGS)
+	
 # the below line is for debugging CPU activity
 # qemu-system-i386 -s -D ./debug.log -d int,cpu_reset -cdrom KERNEL_ISO.iso
 

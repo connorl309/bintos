@@ -16,3 +16,4 @@ typedef enum {
 } log_level;
 
 void log(log_level l, const char* msg);
+void log_num(uint64_t val);

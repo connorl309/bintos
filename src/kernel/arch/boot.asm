@@ -11,7 +11,7 @@ CHECKSUM equ -(MAGIC + MBFLAGS)   ; checksum of above, to prove we are multiboot
 ; search for this signature in the first 8 KiB of the kernel file, aligned at a
 ; 32-bit boundary. The signature is in its own section so the header can be
 ; forced to be within the first 8 KiB of the kernel file.
-section .multiboot
+section .multiboot_header
 align 4
 	dd MAGIC
 	dd MBFLAGS
@@ -20,7 +20,7 @@ align 4
 	dd 0 ; set graphics mode, not text mode
 	dd 1920 ; width
 	dd 1080 ; height
-	dd 32 ; 32 bits of color per pixel
+	dd 32 ; 24 bits of color per pixel
 
 ; The multiboot standard does not define the value of the stack pointer register
 ; (esp) and it is up to the kernel to provide a stack. This allocates room for a
@@ -70,6 +70,7 @@ _start:
 	; preserved and the call is well defined.
         ; note, that if you are building on Windows, C functions may have "_" prefix in assembly: _kernel_main
 	extern kernel_main
+	push ebx
 	call kernel_main
 
 	; If the system has nothing more to do, put the computer into an
