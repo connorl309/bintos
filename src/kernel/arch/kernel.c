@@ -1,6 +1,5 @@
 #include <stdbool.h>
 #include <stddef.h>
-#include <stdint.h>
 #include "gdt.h"
 #include "../debug/debug.h"
 #include "../serial/serial.h"
@@ -41,8 +40,5 @@ void kernel_main(struct multiboot_info* multiboot_ptr)
 	// we have to actually draw the glyphs and characters from a font map.
 	// This is TODO.
 	if (multiboot_info) {
-		// The way to draw to screen using the framebuffer is such that
-		// framebuffer[i] is a 32 bit field, where [23:16] is R, [15:8] is G, [7:0] is B value.
-		// i is entirely linear, as such, the index must always be <= width * height.
 	}
 }

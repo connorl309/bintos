@@ -4,6 +4,8 @@ SRC_DIR := .
 # Build directory for object files
 BUILD_DIR := build
 
+RES_DIR := resources
+
 # Generated binary name
 # If you change this you have to change the grub.cfg as well.
 PROJ_NAME = output.bin
@@ -20,8 +22,8 @@ AS := nasm
 CC := i686-elf-gcc
 ASFLAGS := -felf32 # Important!
 CFLAGS := -std=gnu99 -ffreestanding -Wall -Wextra -Wno-int-conversion
-QEMU_FLAGS = -cdrom KERNEL_ISO.iso -serial file:output.log
-LDFLAGS := -T linker.ld -o output.bin -ffreestanding -nostdlib -lgcc
+QEMU_FLAGS = -cdrom $(BUILD_DIR)/KERNEL_ISO.iso -serial file:output.log
+LDFLAGS := -T linker.ld -o $(BUILD_DIR)/output.bin -ffreestanding -nostdlib -lgcc
 
 # Default target
 all: exec
@@ -31,12 +33,13 @@ debug: QEMU_FLAGS += -s -S
 debug: all
 
 exec: $(BUILD_DIR) $(OBJS)
-	$(CC) $(LDFLAGS) $(OBJS)
-	@grub-file --is-x86-multiboot $(PROJ_NAME) && echo "\033[95mMultiboot check passed!\033[0m" || { echo "\033[31mMultiboot check failed!\033[0m" >&2; exit 1; }
-	mkdir -p build/isodir/boot/grub
-	cp $(PROJ_NAME) build/isodir/boot/
-	cp grub.cfg build/isodir/boot/grub/
-	@grub-mkrescue -o KERNEL_ISO.iso build/isodir
+	i686-elf-objcopy -O elf32-i386 -B i386 -I binary $(RES_DIR)/Uni3-Terminus16.psf $(BUILD_DIR)/font.o
+	$(CC) $(LDFLAGS) $(OBJS) $(BUILD_DIR)/font.o
+	@grub-file --is-x86-multiboot $(BUILD_DIR)/$(PROJ_NAME) && echo "\033[95mMultiboot check passed!\033[0m" || { echo "\033[31mMultiboot check failed!\033[0m" >&2; exit 1; }
+	mkdir -p $(BUILD_DIR)/isodir/boot/grub
+	cp $(BUILD_DIR)/$(PROJ_NAME) $(BUILD_DIR)/isodir/boot/
+	cp grub.cfg $(BUILD_DIR)/isodir/boot/grub/
+	@grub-mkrescue -o $(BUILD_DIR)/KERNEL_ISO.iso build/isodir
 	qemu-system-i386 $(QEMU_FLAGS)
 	
 # the below line is for debugging CPU activity
@@ -58,7 +61,7 @@ $(BUILD_DIR)/%.o: $(SRC_DIR)/%.c
 
 # Clean up generated files
 clean:
-	rm -rf $(BUILD_DIR) $(PROJ_NAME) KERNEL_ISO.iso *.log
+	rm -rf $(BUILD_DIR) $(PROJ_NAME)
 
 
 .PHONY: all clean
