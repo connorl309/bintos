@@ -20,7 +20,7 @@ align 4
 	dd 0 ; set graphics mode, not text mode
 	dd 1920 ; width
 	dd 1080 ; height
-	dd 32 ; 32 bits of color per pixel (ARGB)
+	dd 32 ; 32 bits of color per pixel (RGB)
 
 ; The multiboot standard does not define the value of the stack pointer register
 ; (esp) and it is up to the kernel to provide a stack. This allocates room for a

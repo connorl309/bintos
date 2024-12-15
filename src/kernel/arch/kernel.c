@@ -4,6 +4,7 @@
 #include "../debug/debug.h"
 #include "../serial/serial.h"
 #include "multiboot.h"
+#include "../text/font.h"
 
 // GDT, other helpers
 extern void gdt_flush();
@@ -40,5 +41,11 @@ void kernel_main(struct multiboot_info* multiboot_ptr)
 	// we have to actually draw the glyphs and characters from a font map.
 	// This is TODO.
 	if (multiboot_info) {
+		init_font(multiboot_info->framebuffer_addr,
+				  multiboot_info->framebuffer_pitch,
+				  multiboot_info->framebuffer_width, multiboot_info->framebuffer_height,
+				  0xFFFFFF, 0);
+		putchar('A');
+		putchar('B');
 	}
 }

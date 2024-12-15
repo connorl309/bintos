@@ -15,7 +15,8 @@ Symbol table '.symtab' contains 4 entries:
 extern char _binary_resources_Uni3_Terminus16_psf_start;
 extern char _binary_resources_Uni3_Terminus16_psf_end;
 
-void init_font(const uint32_t addr, const uint32_t p, const uint32_t w, const uint32_t h);
+void init_font(const uint32_t addr, const uint32_t p, const uint32_t w, const uint32_t h, const uint32_t fg, const uint32_t bg);
+void putchar(char c);
 
 // This specific font information was grabbed using the psf2inc tool from https://www.seasip.info/Unix/PSF/
 // install takes a bit of fiddling. We should change this to be dynamic eventually...
