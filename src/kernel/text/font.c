@@ -10,7 +10,7 @@ static uint32_t foreground, background;
 // Initialize font information (framebuffer ptr, screen information)
 void init_font(const uint32_t addr, const uint32_t p, const uint32_t w, const uint32_t h, const uint32_t fg, const uint32_t bg) {
     framebuffer_ptr = (uint32_t*)addr;
-    pitch = p/4; width = w; height = h;
+    pitch = p/sizeof(uint32_t); width = w; height = h;
 
     rows = h / 16; // font is 16 pixels high
     cols = w / 8; // font is 8 pixels wide
