@@ -18,8 +18,8 @@ align 4
 	dd CHECKSUM
 	times 5 dd 0
 	dd 0 ; set graphics mode, not text mode
-	dd 1920 ; width
-	dd 1080 ; height
+	dd 1024 ; width
+	dd 768 ; height
 	dd 32 ; 32 bits of color per pixel (RGB)
 
 ; The multiboot standard does not define the value of the stack pointer register

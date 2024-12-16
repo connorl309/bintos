@@ -30,7 +30,7 @@ all: exec
 
 debug: CFLAGS += -g
 debug: QEMU_FLAGS += -s -S
-debug: all
+debug: clean all
 
 exec: $(BUILD_DIR) $(OBJS)
 	i686-elf-objcopy -O elf32-i386 -B i386 -I binary $(RES_DIR)/Uni3-Terminus16.psf $(BUILD_DIR)/font.o

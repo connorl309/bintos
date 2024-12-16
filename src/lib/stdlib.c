@@ -14,3 +14,12 @@ void* memcpy(void* dst, const void* src, size_t bytes) {
         ((uint8_t*)dst)[i] = ((uint8_t*)src)[i];
     return dst;
 }
+// String length
+uint32_t strlen(const char* str) {
+    uint32_t len = 0;
+    while (*str) {
+        len++;
+        str++;
+    }
+    return len;
+}

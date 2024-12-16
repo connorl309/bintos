@@ -4,7 +4,7 @@
 #include "../debug/debug.h"
 #include "../serial/serial.h"
 #include "multiboot.h"
-#include "../text/font.h"
+#include "../../lib/stdio.h"
 
 // GDT, other helpers
 extern void gdt_flush();
@@ -12,11 +12,11 @@ extern void die();
 
 static volatile struct multiboot_info* multiboot_info;
 
-void kernel_main(struct multiboot_info* multiboot_ptr) 
+void kernel_main(struct multiboot_info* ptr) 
 {
 	// Before we do *anything*, we need to grab the
 	// Multiboot frame buffer pointer out of ebx.
-	multiboot_info = multiboot_ptr;
+	multiboot_info = ptr;
 
 	// GDT initialization
 	// TODO: should we do segmentation properly or just let memory
@@ -45,7 +45,8 @@ void kernel_main(struct multiboot_info* multiboot_ptr)
 				  multiboot_info->framebuffer_pitch,
 				  multiboot_info->framebuffer_width, multiboot_info->framebuffer_height,
 				  0xFFFFFF, 0);
-		putchar('A');
-		putchar('B');
+	
+		printf("Framebuffer information:\n");
+		printf("Framebuffer ptr = 0x%x, width = %d, height = %d", (uint32_t)multiboot_info->framebuffer_addr, multiboot_info->framebuffer_width, multiboot_info->framebuffer_height);
 	}
 }
