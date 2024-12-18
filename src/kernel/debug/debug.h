@@ -8,12 +8,11 @@
 // Debug assumes that COM1 has been set up and initialzed properly.
 
 typedef enum {
-    INFO,
-    WARN,
-    ERROR,
-    DEBUG,
+    INFO = 1,
+    WARN = 2,
+    ERROR = 3,
+    DEBUG = 4,
     NUM_LEVELS
 } log_level;
 
-void log(log_level l, const char* msg);
-void log_num(uint64_t val);
+void logf(log_level l, const char* format, ...);

@@ -5,6 +5,7 @@
 #include "../serial/serial.h"
 #include "multiboot.h"
 #include "../../lib/stdio.h"
+#include "./int/idt.h"
 
 // GDT, other helpers
 extern void gdt_flush();
@@ -31,11 +32,13 @@ void kernel_main(struct multiboot_info* ptr)
 	if (s) {
 		gdt_flush();
 		if (init_serial(COM1)) {
-			log(INFO, "COM1 initialized!\n");
+			logf(INFO, "COM1 initialized!\n");
 		}
 	} else {
 		die();
 	}
+
+	idt_register_exceptions();
 
 	// Because we're booting into graphical mode from Multiboot, we don't have access to the VGA text buffer. As such
 	// we have to actually draw the glyphs and characters from a font map.
@@ -48,5 +51,7 @@ void kernel_main(struct multiboot_info* ptr)
 	
 		printf("Framebuffer information:\n");
 		printf("Framebuffer ptr = 0x%x, width = %d, height = %d", (uint32_t)multiboot_info->framebuffer_addr, multiboot_info->framebuffer_width, multiboot_info->framebuffer_height);
+		// I want to test exceptions: let's try dividng by zero
+		volatile int b = 10 / 0;
 	}
 }
