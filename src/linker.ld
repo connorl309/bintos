@@ -54,4 +54,7 @@ SECTIONS
 
 	/* The compiler may produce other sections, by default it will put them in
 	   a segment with the same name. Simply add stuff here as needed. */
+
+	/* We can abuse the linker to get the absolute end of the kernel image here and refer to it in the code. */
+	end_of_kernel = .;
 }

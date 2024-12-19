@@ -22,13 +22,13 @@ AS := nasm
 CC := i686-elf-gcc
 ASFLAGS := -felf32 # Important!
 CFLAGS := -std=gnu99 -ffreestanding -Wall -Wextra -Wno-int-conversion
-QEMU_FLAGS = -cdrom $(BUILD_DIR)/KERNEL_ISO.iso -serial file:output.log
+QEMU_FLAGS = -cdrom $(BUILD_DIR)/KERNEL_ISO.iso -serial file:debug.log
 LDFLAGS := -T linker.ld -o $(BUILD_DIR)/output.bin -ffreestanding -nostdlib -lgcc
 
 # Default target
 all: exec
 
-debug: CFLAGS += -g
+debug: CFLAGS += -g3
 debug: QEMU_FLAGS += -s -S
 debug: clean all
 

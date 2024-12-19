@@ -7,7 +7,7 @@ static idtr_t idtr;
 extern void* isr_stub_table[]; // from istub.asm
 
 // Basic messages for which exception happened
-static const char* exceptions[15] = {
+static const char* exceptions[20] = {
     "#DE - Division Error",
     "#DB - Debug",
     "NMI",
@@ -22,14 +22,19 @@ static const char* exceptions[15] = {
     "#NP - Segment Not Present",
     "#SS - Stack Segment Fault",
     "#GP - General Protection Fault",
-    "#PF - Page Fault"
+    "#PF - Page Fault",
+    "RESERVED",
+    "#MF - x87 Floating-Point Exception",
+    "#AC - Alignment Check",
+    "#MC - Machine Check",
+    "#XM/#XF - SIMD Floating-Point Exception"
 };
 
 // Generic exception handler for exceptions
 void exception_handler(intr_frame* frame) {
     __asm__ volatile ("cli");
     // There exist other exceptions past vector 15, but I don't really care about them (currently).
-    if (frame->vec_no <= 15) {
+    if (frame->vec_no <= 20) {
         logf(ERROR, "CPU Exception[%d]: %s\n", frame->vec_no, exceptions[frame->vec_no]);
         logf(0, "Interrupt Frame:\n"
          "\tSegments:\n"
@@ -56,10 +61,10 @@ void exception_handler(intr_frame* frame) {
 // Sets IDT entry for `vector`.
 void idt_set_descriptor(uint8_t vector, void* isr, uint8_t flags) {
     idt_entry_t* descriptor = &idt[vector];
-    descriptor->isr_low        = (uint32_t)isr & 0xFFFF;
+    descriptor->isr_low        = (uintptr_t)isr & 0xFFFF;
     descriptor->kernel_cs      = 0x08; // must be kernel CS value from GDT (see helpers.asm)
     descriptor->attributes     = flags;
-    descriptor->isr_high       = (uint32_t)isr >> 16;
+    descriptor->isr_high       = (uintptr_t)isr >> 16;
     descriptor->reserved       = 0;
 }
 
@@ -73,5 +78,5 @@ void idt_register_exceptions() {
     }
 
     __asm__ volatile ("lidt %0" : : "m"(idtr)); // just like lgdt
-    __asm__ volatile ("sti"); // enable interrupts!
+    __asm__ volatile ("sti"); // enable interrupts!!
 }
