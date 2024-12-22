@@ -36,3 +36,5 @@ __attribute__((noreturn)) void exception_handler(intr_frame* f);
 void idt_set_descriptor(uint8_t vector, void* isr, uint8_t flags);
 // Generic init for the first 32 exceptions
 void idt_register_exceptions();
+// Generic init for the first 16 interrupts
+void idt_register_interrupts();

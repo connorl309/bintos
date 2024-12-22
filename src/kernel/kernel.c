@@ -8,6 +8,7 @@
 #include "../lib/assert.h"
 #include "../text/font.h"
 #include "../lib/stdio.h"
+#include "arch/int/interrupts.h"
 
 // GDT, other helpers
 extern void gdt_flush();
@@ -43,9 +44,7 @@ void kernel_main(struct multiboot_info* ptr, uint32_t multiboot_magic)
 	// TODO: once we eventually get to userland we'll want to kill the user
 	// process, and not just kill the computer.
 
-	// These are disabled for now - we MUST handle PIC IRQs before these can turn on.
-
-	//idt_register_exceptions();
+	idt_register_exceptions();
 
 	// Because we're booting into graphical mode from Multiboot, we don't have access to the VGA text buffer. As such
 	// we have to actually draw the glyphs and characters from a font map.
@@ -77,5 +76,10 @@ void kernel_main(struct multiboot_info* ptr, uint32_t multiboot_magic)
                 (unsigned) (mmap->len & 0xFFFFFFFF),
                 ((unsigned) mmap->type == 1) ? "Available" : "Reserved");
 		}
+	
+	// Interrupts
+	set_interrupt_routines(); // registers irq0-15 functions
+	idt_register_interrupts();
 
+	while (1); // (Eventually) we should never reach here
 }
