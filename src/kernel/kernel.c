@@ -1,20 +1,26 @@
 #include <stdbool.h>
 #include <stddef.h>
 #include "arch/gdt.h"
-#include "debug/debug.h"
-#include "serial/serial.h"
+#include "../debug/debug.h"
+#include "../serial/serial.h"
 #include "arch/multiboot.h"
 #include "arch/int/idt.h"
 #include "../lib/assert.h"
 #include "../text/font.h"
 #include "../lib/stdio.h"
 #include "arch/int/interrupts.h"
+#include "../devices/timer.h"
 
 // GDT, other helpers
 extern void gdt_flush();
 extern void die();
 
+// Passed in from GRUB
 static struct multiboot_info* multiboot_info;
+
+// Master kernel information - uptime
+// We configure the PIT to tick every ~millisecond
+uint32_t kernel_ticks = 0;
 
 void kernel_main(struct multiboot_info* ptr, uint32_t multiboot_magic) 
 {
@@ -39,12 +45,15 @@ void kernel_main(struct multiboot_info* ptr, uint32_t multiboot_magic)
 		logf(INFO, "COM1 initialized!\n");
 	}
 
-	// Set up the first 15 basic exception handlers. They all actually
-	// point to the same function which will just dump out info and die.
-	// TODO: once we eventually get to userland we'll want to kill the user
-	// process, and not just kill the computer.
 
+	// Exceptions
 	idt_register_exceptions();
+	// Interrupts
+	set_interrupt_routines();
+	idt_register_interrupts(); // registers irq0-15 functions
+
+	// Timer init
+	pit_timer_init(1000); // 1000Hz (every millisecond)
 
 	// Because we're booting into graphical mode from Multiboot, we don't have access to the VGA text buffer. As such
 	// we have to actually draw the glyphs and characters from a font map.
@@ -76,10 +85,6 @@ void kernel_main(struct multiboot_info* ptr, uint32_t multiboot_magic)
                 (unsigned) (mmap->len & 0xFFFFFFFF),
                 ((unsigned) mmap->type == 1) ? "Available" : "Reserved");
 		}
-	
-	// Interrupts
-	set_interrupt_routines(); // registers irq0-15 functions
-	idt_register_interrupts();
 
 	while (1); // (Eventually) we should never reach here
 }

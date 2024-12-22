@@ -29,7 +29,8 @@ void set_interrupt_routines() {
 
 // System timer/clock interrupt - PIT
 void irq0(intr_frame* f) {
-
+extern uint32_t kernel_ticks;
+    kernel_ticks++;
 }
 
 // Keyboard interrupt

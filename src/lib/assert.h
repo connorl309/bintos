@@ -2,7 +2,7 @@
 
 #include <stdbool.h>
 #include <stdint.h>
-#include "../kernel/debug/debug.h"
+#include "../debug/debug.h"
 
 extern void die();
 

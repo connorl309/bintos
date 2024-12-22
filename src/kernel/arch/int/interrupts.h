@@ -2,7 +2,7 @@
 
 #include <stdint.h>
 #include <stdbool.h>
-#include "../../debug/debug.h"
+#include "../../../debug/debug.h"
 #include "idt.h"
 
 void* get_irq_handler(uint8_t num);

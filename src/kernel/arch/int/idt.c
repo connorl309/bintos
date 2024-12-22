@@ -1,7 +1,7 @@
 #include "idt.h"
-#include "../../debug/debug.h"
+#include "../../../debug/debug.h"
 #include "interrupts.h"
-#include "../../serial/serial.h"
+#include "../../../serial/serial.h"
 
 #define PIC_MASTER_CMD 0x20
 #define PIC_MASTER_DATA 0x21
@@ -37,13 +37,13 @@ static const char* exceptions[20] = {
     "#MC - Machine Check",
     "#XM/#XF - SIMD Floating-Point Exception"
 };
-
+extern uint32_t kernel_ticks;
 // Generic exception handler for exceptions
 void exception_handler(intr_frame* frame) {
     __asm__ volatile ("cli");
     // There exist other exceptions past vector 15, but I don't really care about them (currently).
     if (frame->vec_no <= 20) {
-        logf(ERROR, "CPU Exception[%d]: %s\n", frame->vec_no, exceptions[frame->vec_no]);
+        logf(ERROR, "CPU Exception @ ticks=%d: %s\n", kernel_ticks, exceptions[frame->vec_no]);
         logf(0, "Interrupt Frame:\n"
          "\tSegments:\n"
          "\t\tgs: 0x%x\tfs: 0x%x\tes: 0x%x\tds: 0x%x\n"
