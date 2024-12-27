@@ -10,6 +10,7 @@
 #include "../lib/stdio.h"
 #include "arch/int/interrupts.h"
 #include "../devices/timer.h"
+#include "../devices/keyboard_ps2.h"
 
 // GDT, other helpers
 extern void gdt_flush();
@@ -49,7 +50,9 @@ void kernel_main(struct multiboot_info* ptr, uint32_t multiboot_magic)
 	// Exceptions
 	idt_register_exceptions();
 	// Interrupts
-	set_interrupt_routines();
+	set_default_interrupt_routines();
+	// Override the default irq1 handler to use our keyboard handler
+	set_irq(1, keyboard_handler);
 	idt_register_interrupts(); // registers irq0-15 functions
 
 	// Timer init
@@ -86,5 +89,8 @@ void kernel_main(struct multiboot_info* ptr, uint32_t multiboot_magic)
                 ((unsigned) mmap->type == 1) ? "Available" : "Reserved");
 		}
 
-	while (1); // (Eventually) we should never reach here
+	while (1) { // (Eventually) we should never reach here
+		printf("%s", keyboard_read());
+		//timer_delay_ms(1000);
+	}
 }

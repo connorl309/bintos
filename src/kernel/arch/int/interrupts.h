@@ -5,8 +5,9 @@
 #include "../../../debug/debug.h"
 #include "idt.h"
 
+void set_default_interrupt_routines();
+void set_irq(uint8_t irq, void* isr);
 void* get_irq_handler(uint8_t num);
-void set_interrupt_routines();
 void irq0(intr_frame* f);
 void irq1(intr_frame* f);
 void irq2(intr_frame* f);

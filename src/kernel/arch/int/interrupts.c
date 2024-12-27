@@ -1,4 +1,5 @@
 #include "interrupts.h"
+#include "../../../serial/serial.h"
 
 static void* irq_routines[16] = { 0 };
 
@@ -8,7 +9,10 @@ void* get_irq_handler(uint8_t num) {
     else
         return 0;
 }
-void set_interrupt_routines() {
+void set_irq(uint8_t irq, void* isr) {
+    irq_routines[irq] = isr;
+}
+void set_default_interrupt_routines() {
     irq_routines[0] = irq0;
     irq_routines[1] = irq1;
     irq_routines[2] = irq2;
@@ -33,9 +37,8 @@ extern uint32_t kernel_ticks;
     kernel_ticks++;
 }
 
-// Keyboard interrupt
+// Keyboard interrupt (supposedly)
 void irq1(intr_frame* f) {
-
 }
 
 void irq2(intr_frame* f) {
