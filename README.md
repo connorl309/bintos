@@ -6,3 +6,5 @@ Toolchain can be accessed in the current shell by using `i686-elf-xxxx` where `x
 # Making/running
 Navigate into the `src/` directory, then run `make`. This generates a `.bin` and `.iso` file.
 Running in QEMU is not automated yet. To do this, run `qemu-system-i386 -cdrom KERNEL_ISO.iso`. Make sure you have `xorriso` and `qemu-system-gui` packages installed (or their equivalents).
+
+TODO: Builds should include -mno-red-zone during compilation
