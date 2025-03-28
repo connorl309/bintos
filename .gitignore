@@ -51,7 +51,7 @@ Module.symvers
 Mkfile.old
 dkms.conf
 
-tools/bin
+tools/
 src/build/
 
 .clangd
