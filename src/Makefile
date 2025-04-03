@@ -4,6 +4,7 @@ SRC_DIR := .
 # Build directory for object files
 BUILD_DIR := build
 ISO_DIR := $(BUILD_DIR)/iso_root
+RES_DIR := $(SRC_DIR)/resources/
 
 RES_DIR := resources
 
@@ -34,7 +35,8 @@ debug: QEMU_FLAGS += -s -S
 debug: clean all
 
 exec: $(BUILD_DIR) $(OBJS)
-	$(CC) $(CFLAGS) $(LDFLAGS) $(OBJS) -o $(BUILD_DIR)/$(PROJ_NAME).bin
+	${cc_TARGET}-objcopy -O elf64-x86-64 -B i386:x86-64 -I binary $(RES_DIR)/Uni3-Terminus16.psf $(BUILD_DIR)/font.o
+	$(CC) $(CFLAGS) $(LDFLAGS) $(OBJS) $(BUILD_DIR)/font.o -o $(BUILD_DIR)/$(PROJ_NAME).bin
 	mkdir -p $(ISO_DIR)
 	mkdir -p $(ISO_DIR)/boot
 # Limine config
@@ -56,6 +58,7 @@ exec: $(BUILD_DIR) $(OBJS)
         $(ISO_DIR) -o $(PROJ_NAME).iso
 # Need the Limine tool built on your system. If it doesn't exist then go get it lol
 	$(SRC_DIR)/limine_bin/limine_tool bios-install $(PROJ_NAME).iso
+	qemu-system-x86_64 -cdrom $(PROJ_NAME).iso -serial file:debug.log
 	
 # the below line is for debugging CPU activity
 # qemu-system-i386 -s -D ./debug.log -d int,cpu_reset -cdrom KERNEL_ISO.iso

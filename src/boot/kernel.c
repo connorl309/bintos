@@ -36,6 +36,10 @@ static volatile struct limine_memmap_request memmap_request = {
 __attribute__((used, section(".limine_requests_end")))
 static volatile LIMINE_REQUESTS_END_MARKER;
 
+#include "../lib/stdlib.h"
+#include "../serial/serial.h"
+#include "../resources/font/font.h"
+
 // The following will be our kernel's entry point.
 // If renaming kmain() to something else, make sure to change the
 // linker script accordingly.
@@ -51,14 +55,20 @@ void kmain(void) {
         hcf();
     }
 
+    // Initialize basic serial
+    if (init_serial(COM1)) {
+        logf(INFO, "Serial enabled on COM1\n");
+    }
+
     // Fetch the first framebuffer.
     struct limine_framebuffer *framebuffer = framebuffer_request.response->framebuffers[0];
 
-    // Note: we assume the framebuffer model is RGB with 32-bit pixels.
-    for (size_t i = 0; i < 100; i++) {
-        volatile uint32_t *fb_ptr = framebuffer->address;
-        fb_ptr[i * (framebuffer->pitch / 4) + i] = 0xffffff;
-    }
+    init_font(framebuffer->address, framebuffer->pitch, framebuffer->width, framebuffer->height, 0x00FFFFFF, 0);
+    set_text_cursor(4, 4);
+    puts("Ballsack.");
+
+    // Shouldn't get past this
+    while (1) {}
 
     // We're done, just hang...
     hcf();
