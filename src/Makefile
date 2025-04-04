@@ -12,6 +12,10 @@ RES_DIR := resources
 # If you change this you have to change the grub.cfg as well.
 PROJ_NAME = bintos
 
+ifeq ($(origin ${cc_TARGET}), undefined)
+  $(error Environment variable $(VAR_NAME) is not defined! Please source init.sh before continuing)
+endif
+
 # Find all .asm and .c files in the source directory
 SRCS := $(shell find $(SRC_DIR) -name '*.asm' -o -name '*.c')
 
@@ -24,7 +28,7 @@ AS := nasm
 CC := ${cc_TARGET}-gcc
 ASFLAGS := -felf32 # Important!
 CFLAGS := -m64 -std=gnu99 -ffreestanding -Wall -Wextra -Wno-int-conversion -fno-stack-protector -fno-stack-check -fno-PIC -mno-mmx -mno-sse -mno-red-zone -mcmodel=kernel
-QEMU_FLAGS = -cdrom $(BUILD_DIR)/KERNEL_ISO.iso -serial file:debug.log
+QEMU_FLAGS = -cdrom $(BUILD_DIR)/KERNEL_ISO.iso -s -D ./debug.log -d int,cpu_reset # -serial file:debug.log
 LDFLAGS := -T linker.ld -o $(BUILD_DIR)/$(PROJ_NAME).bin -ffreestanding -nostdlib -m64 -static -z max-page-size=0x1000
 
 # Default target

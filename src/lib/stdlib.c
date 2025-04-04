@@ -10,7 +10,7 @@ void *memcpy(void *dest, const void *src, size_t n) {
     return dest;
 }
 
-void *memset(void *s, int c, size_t n) {
+void *memset(void *s, uint8_t c, size_t n) {
     uint8_t *p = (uint8_t *)s;
 
     for (size_t i = 0; i < n; i++) {

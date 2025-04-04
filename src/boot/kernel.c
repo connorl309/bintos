@@ -1,50 +1,11 @@
-#include <stdint.h>
-#include <stddef.h>
-#include <stdbool.h>
-#include "limine.h"
-#include "../lib/stdlib.h"
-
-
-// Limine request list
-__attribute__((used, section(".limine_requests_start")))
-static volatile LIMINE_REQUESTS_START_MARKER;
-
-__attribute__((used, section(".limine_requests")))
-static volatile LIMINE_BASE_REVISION(3);
-
-// Framebuffer
-__attribute__((used, section(".limine_requests")))
-static volatile struct limine_framebuffer_request framebuffer_request = {
-    .id = LIMINE_FRAMEBUFFER_REQUEST,
-    .revision = 0
-};
-
-// HHDM for memory mapping later
-__attribute__((used, section(".limine_requests")))
-static volatile struct limine_hhdm_request hhdm_request = {
-    .id = LIMINE_HHDM_REQUEST,
-    .revision = 0
-};
-
-// Memory map
-__attribute__((used, section(".limine_requests")))
-static volatile struct limine_memmap_request memmap_request = {
-    .id = LIMINE_MEMMAP_REQUEST,
-    .revision = 0
-};
-
-__attribute__((used, section(".limine_requests")))
-static volatile struct limine_kernel_file_request kernel_request = {
-    .id = LIMINE_KERNEL_FILE_REQUEST,
-    .revision = 0
-};
-
-__attribute__((used, section(".limine_requests_end")))
-static volatile LIMINE_REQUESTS_END_MARKER;
-
-#include "../lib/stdlib.h"
+#include "../common.h"
 #include "../serial/serial.h"
 #include "../resources/font/font.h"
+#include "../memory/memory.h"
+
+// Limine requests kept in this file
+#include "requests.h"
+// Please don't modify where it is relative to kmain : )
 
 extern void* FRAME_START;
 static uint64_t hhdm_offset;
@@ -82,41 +43,9 @@ void kmain(void) {
     logf(INFO, "HHDM offset is 0x%lx\n", hhdm_request.response->offset);
     hhdm_offset = hhdm_request.response->offset;
 
-    // Frame allocation location
-    logf(INFO, "Frame allocation beginning at 0x%lx\n", &FRAME_START);
-
-    // log memory map info
-    for (uint64_t i = 0; i < memmap_request.response->entry_count; i++) {
-        struct limine_memmap_entry* e = memmap_request.response->entries[i];
-        // Fancy print the type
-        const char* type;
-        switch(e->type) {
-            case LIMINE_MEMMAP_USABLE:
-                type = "Usable";
-                break;
-            case LIMINE_MEMMAP_RESERVED:
-                type = "Reserved";
-                break;
-            case LIMINE_MEMMAP_ACPI_RECLAIMABLE:
-                type = "ACPI Reclaimable";
-                break;
-            case LIMINE_MEMMAP_BAD_MEMORY:
-                type = "Bad Memory";
-                break;
-            case LIMINE_MEMMAP_BOOTLOADER_RECLAIMABLE:
-                type = "Bootloader Reclaimable";
-                break;
-            case LIMINE_MEMMAP_KERNEL_AND_MODULES:
-                type = "Kernel/Module";
-                break;
-            case LIMINE_MEMMAP_FRAMEBUFFER:
-                type = "Framebuffer";
-                break;
-        }
-        logf(INFO, "Memory Map: 0x%lx -> 0x%lx\t\t\t%s\n", e->base, e->base + e->length, type);
-    }
-
     init_font(framebuffer->address, framebuffer->pitch, framebuffer->width, framebuffer->height, 0x00FFFFFF, 0);
+
+    initialize_memmap(memmap_request.response, hhdm_offset);
 
     // Shouldn't get past this
     while (1) {}
