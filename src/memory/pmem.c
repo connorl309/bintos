@@ -24,6 +24,39 @@ inline uint64_t p2v(const uint64_t paddr) {
     return paddr + hhdmoff;
 }
 
+// Set a frame's flags
+static void set_frame_flags(uint64_t frame_no, uint8_t flags) {
+    uint8_t local = frame_map[frame_no >> 1];
+    
+    // We are going left-to-right from the byte.
+    // So:
+    /*
+        7654-3210
+        xxxx-yyyy
+        Where xxxx is the nibble for frame N, yyyy is nibble for N+1, etc.
+    */
+
+    local &= ~(0xF << (!(frame_no & 1) << 2));
+    local |= flags << (!(frame_no & 1) << 2); 
+    frame_map[frame_no >> 1] = local;
+}
+
+// Get bitmap flags for specific frame
+static uint8_t get_frame_flags(uint64_t frame_no) {
+    uint8_t local = frame_map[frame_no >> 1];
+    
+    // We are going left-to-right from the byte.
+    // So:
+    /*
+        7654-3210
+        xxxx-yyyy
+        Where xxxx is the nibble for frame N, yyyy is nibble for N+1, etc.
+    */
+
+    local &= 0xF << (!(frame_no & 1) << 2);
+    return local >> (!(frame_no & 1) << 2);
+}
+
 // We have a page of memory reserved here for the structure information. This will be included in our 
 // kernel reserved space so we don't really need to worry about it.
 #define MAX_REGIONS 32
@@ -138,13 +171,65 @@ static void initialize_bitmap() {
     for (uint32_t i = 0; i < bitmap_length; i++) {
         frame_map[i] = set;
     }
+    logf(INFO, "Initialized physical frame bitmap!\n");
 }
 // Returns some physical frame.
-void *frame_alloc() {
-    NOT_IMPL();
-    return NULL;
+// Note: this is a physical address.
+static uint64_t index = 0;
+uint64_t frame_alloc() {
+
+    uint8_t flag = get_frame_flags(index);
+    while (!(flag & AVAIL)) {
+        logf(DEBUG, "idx=%ld, flag=%x\n", index, flag);
+        index++;
+        flag = get_frame_flags(index);
+        CHASSERT(index < max_frames && "Iterated too much trying to allocate a frame! No eviction yet.");
+    }
+
+    logf(DEBUG, "idx=%ld, flag=%x\n", index, flag);
+
+    // We now have the current index which corresponds to a frame being available.
+    // We want to clear out the available bit.
+    flag &= 0b0111;
+    set_frame_flags(index, flag);
+
+    // We need to go from index -> address, which requires us to iterate over our 
+    // memory regions and find who fits.
+    uint8_t map_idx = 0;
+    int64_t copy = index;
+    uint64_t start;
+    while (true) {
+        // If the amount of pages the current region can hold
+        // exceeds the remaining number of pages we need to iterate through
+        // to get to `index`, then the current region is where we will
+        // allocate.
+        if ((signed)(copy - (int64_t)region_info[map_idx].pages) < 0) {
+            start = region_info[map_idx].start;
+            break;
+        } else {
+            copy -= region_info[map_idx].pages;
+            map_idx++;
+            CHASSERT(map_idx < num_regions && "Iterated out of bounds for region identification");
+        }
+    }
+    uint64_t addr = start + ((unsigned)copy * FRAME_ALLOCATION_SIZE);
+#ifdef MORE_DEBUG
+    logf(DEBUG, "Allocated physical memory at bitmap=%ld, 0x%lx\n", index, addr);
+#endif
+    index++;
+    // Ideally we're good here...
+    // The final address will be the current start region
+    // plus pgsize * remaining pages from copy.
+    return addr;
 }
 // Frees a frame.
 void frame_free(void* paddr) {
     NOT_IMPL();
 }
+
+/*
+    bitmap index 20
+
+    region1: [0, 18]
+    region2: [19, 50]
+*/

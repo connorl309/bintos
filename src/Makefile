@@ -23,16 +23,16 @@ OBJS := $(OBJS:$(SRC_DIR)/%.c=$(BUILD_DIR)/%.o)
 AS := nasm
 CC := ${cc_TARGET}-gcc
 ASFLAGS := -felf32 # Important!
-CFLAGS := -m64 -std=gnu99 -ffreestanding -Wall -Wextra -Wno-int-conversion -fno-stack-protector -fno-stack-check -fno-PIC -mno-mmx -mno-sse -mno-red-zone -mcmodel=kernel
-QEMU_FLAGS = -cdrom $(BUILD_DIR)/KERNEL_ISO.iso -s -D ./debug.log -d int,cpu_reset # -serial file:debug.log
-LDFLAGS := -T linker.ld -o $(BUILD_DIR)/$(PROJ_NAME).bin -ffreestanding -nostdlib -m64 -static -z max-page-size=0x1000
+CFLAGS := -m64 -std=gnu99 -g -ffreestanding -Wall -Wextra -Wno-int-conversion -fno-stack-protector -fno-stack-check -mno-mmx -mno-sse -mno-red-zone -mcmodel=kernel
+QEMU_FLAGS = -cdrom $(PROJ_NAME).iso -s -D ./debug.log -d int,cpu_reset -serial file:output.log
+LDFLAGS := -T linker.ld -o $(BUILD_DIR)/$(PROJ_NAME).elf -ffreestanding -nostdlib -m64 -z max-page-size=0x1000
 
 # Default target
 all: exec
 
 debug: CFLAGS += -g3
-debug: QEMU_FLAGS += -s -S
-debug: clean all
+debug: QEMU_FLAGS += -S
+debug: all
 
 exec: $(BUILD_DIR) $(OBJS)
 	${cc_TARGET}-objcopy -O elf64-x86-64 -B i386:x86-64 -I binary $(RES_DIR)/Uni3-Terminus16.psf $(BUILD_DIR)/font.o
@@ -60,7 +60,7 @@ exec: $(BUILD_DIR) $(OBJS)
 # Need the Limine tool built on your system. If it doesn't exist then go get it lol
 	$(SRC_DIR)/limine_bin/limine_tool bios-install $(PROJ_NAME).iso
 # We want to give Qemu 8G of fake RAM to work with.
-	qemu-system-x86_64 -m 8G -cdrom $(PROJ_NAME).iso -serial file:debug.log
+	qemu-system-x86_64 -m 8G $(QEMU_FLAGS)
 	
 # the below line is for debugging CPU activity
 # qemu-system-i386 -s -D ./debug.log -d int,cpu_reset -cdrom KERNEL_ISO.iso
@@ -81,7 +81,7 @@ $(BUILD_DIR)/%.o: $(SRC_DIR)/%.c
 
 # Clean up generated files
 clean:
-	rm -rf $(BUILD_DIR) $(PROJ_NAME).bin
+	rm -rf $(BUILD_DIR) $(PROJ_NAME).*
 
 
 .PHONY: all clean

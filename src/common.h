@@ -1,5 +1,7 @@
 #pragma once
 
+#define MORE_DEBUG
+
 #include <stdint.h>
 #include "lib/stdlib.h"
 #include <stddef.h>

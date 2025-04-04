@@ -27,7 +27,7 @@ static void locate_for_bitmap();
 // data to store the bitmap.
 static void initialize_bitmap();
 // Returns some physical frame.
-void*       frame_alloc();
+uint64_t       frame_alloc();
 // Frees a frame.
 void        frame_free(void* paddr);
 

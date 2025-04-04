@@ -57,6 +57,10 @@ void hcf(void) {
     }
 }
 
+void cli(void) {
+    asm ("cli");
+}
+
 // Logging over serial
 #include <stdarg.h>
 #include "../serial/serial.h"
