@@ -132,6 +132,53 @@ void logf(log_level l, const char* format, ...) {
                     }
                     break;
                 }
+                case 'l': {
+                    // Check for 64-bit specifiers: %ld or %lx
+                    if (*(str + 1)) {
+                        ++str; // Move past 'l'
+                        switch (*str) {
+                            case 'd': {
+                                // 64-bit signed integer
+                                uint64_t arg = va_arg(args, uint64_t);
+                                bool is_negative = arg < 0;
+                                if (is_negative) {
+                                    arg = -arg;
+                                    write_serial(COM1, '-');
+                                }
+                                int i = 0;
+                                do {
+                                    buffer[i++] = '0' + (arg % 10);
+                                    arg /= 10;
+                                } while (arg > 0);
+                                for (int j = i - 1; j >= 0; --j) {
+                                    write_serial(COM1, buffer[j]);
+                                }
+                                break;
+                            }
+                            case 'x': {
+                                // 64-bit unsigned integer in hexadecimal
+                                uint64_t arg = va_arg(args, uint64_t);
+                                int i = 0;
+                                do {
+                                    int nibble = arg % 16;
+                                    buffer[i++] = nibble < 10 ? ('0' + nibble) : ('a' + (nibble - 10));
+                                    arg /= 16;
+                                } while (arg > 0);
+                                for (int j = i - 1; j >= 0; --j) {
+                                    write_serial(COM1, buffer[j]);
+                                }
+                                break;
+                            }
+                            default:
+                                // Unknown specifier after %l: print it as is
+                                write_serial(COM1, '%');
+                                write_serial(COM1, 'l');
+                                write_serial(COM1, *str);
+                                break;
+                        }
+                    }
+                    break;
+                }
                 default:
                     // Unknown specifier, just print it as is
                     write_serial(COM1, '%');
@@ -143,7 +190,7 @@ void logf(log_level l, const char* format, ...) {
         }
         ++str;
     }
-
+    
     va_end(args);
 }
 

@@ -60,6 +60,10 @@ SECTIONS
         *(COMMON)
     } :data
 
+    /* 4k Align for frame info */
+    . = ALIGN(CONSTANT(MAXPAGESIZE));
+    FRAME_START = .;
+
     /* Discard .note.* and .eh_frame* since they may cause issues on some hosts. */
     /DISCARD/ : {
         *(.eh_frame*)

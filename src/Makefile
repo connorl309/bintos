@@ -58,7 +58,8 @@ exec: $(BUILD_DIR) $(OBJS)
         $(ISO_DIR) -o $(PROJ_NAME).iso
 # Need the Limine tool built on your system. If it doesn't exist then go get it lol
 	$(SRC_DIR)/limine_bin/limine_tool bios-install $(PROJ_NAME).iso
-	qemu-system-x86_64 -cdrom $(PROJ_NAME).iso -serial file:debug.log
+# We want to give Qemu 8G of fake RAM to work with.
+	qemu-system-x86_64 -m 8G -cdrom $(PROJ_NAME).iso -serial file:debug.log
 	
 # the below line is for debugging CPU activity
 # qemu-system-i386 -s -D ./debug.log -d int,cpu_reset -cdrom KERNEL_ISO.iso
