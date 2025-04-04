@@ -12,10 +12,6 @@ RES_DIR := resources
 # If you change this you have to change the grub.cfg as well.
 PROJ_NAME = bintos
 
-ifeq ($(origin ${cc_TARGET}), undefined)
-  $(error Environment variable $(VAR_NAME) is not defined! Please source init.sh before continuing)
-endif
-
 # Find all .asm and .c files in the source directory
 SRCS := $(shell find $(SRC_DIR) -name '*.asm' -o -name '*.c')
 
