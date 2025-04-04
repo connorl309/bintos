@@ -20,3 +20,19 @@ static void initialize_bitmap();
 void*       frame_alloc();
 // Frees a frame.
 void        frame_free(void* paddr);
+
+
+/*&
+
+315k chunk early on.
+
+struct {
+    ptr to region
+    ptr to next region (starting AFTER bitmap)
+    avail size = region size - bitmap size? pg round down
+    bitmap size
+} region
+
+
+
+*/
