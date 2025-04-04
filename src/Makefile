@@ -30,8 +30,9 @@ LDFLAGS := -T linker.ld -o $(BUILD_DIR)/$(PROJ_NAME).elf -ffreestanding -nostdli
 # Default target
 all: exec
 
-debug: CFLAGS += -g3
-debug: QEMU_FLAGS += -S
+gdb: QEMU_FLAGS += -S
+gdb: debug
+debug: CFLAGS += -g3 -DMORE_DEBUG
 debug: all
 
 exec: $(BUILD_DIR) $(OBJS)
@@ -81,7 +82,7 @@ $(BUILD_DIR)/%.o: $(SRC_DIR)/%.c
 
 # Clean up generated files
 clean:
-	rm -rf $(BUILD_DIR) $(PROJ_NAME).*
+	rm -rf $(BUILD_DIR) $(PROJ_NAME).* *.log
 
 
 .PHONY: all clean

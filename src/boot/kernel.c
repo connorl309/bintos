@@ -47,12 +47,6 @@ void kmain(void) {
 
     initialize_memmap(memmap_request.response, hhdm_offset);
 
-#ifdef MORE_DEBUG
-    uint64_t alloc1 = frame_alloc();
-    uint64_t alloc2 = frame_alloc();
-    uint64_t alloc3 = frame_alloc();
-#endif
-
     puts("Please work");
 
     // Shouldn't get past this

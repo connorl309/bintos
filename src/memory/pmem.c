@@ -186,8 +186,6 @@ uint64_t frame_alloc() {
         CHASSERT(index < max_frames && "Iterated too much trying to allocate a frame! No eviction yet.");
     }
 
-    logf(DEBUG, "idx=%ld, flag=%x\n", index, flag);
-
     // We now have the current index which corresponds to a frame being available.
     // We want to clear out the available bit.
     flag &= 0b0111;
