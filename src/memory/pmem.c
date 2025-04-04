@@ -2,11 +2,11 @@
 #include "memory.h"
 
 static struct limine_memmap_response* map;
+static uint64_t bitmap_length;
 static uint8_t* frame_map;
 static uint64_t max_frames;
 // Statistics
 static uint64_t init_free_space;
-static uint64_t bytes_needed;
 static uint64_t hhdmoff;
 
 // Flags for a nibble
@@ -24,18 +24,34 @@ inline uint64_t p2v(const uint64_t paddr) {
     return paddr + hhdmoff;
 }
 
+// We have a page of memory reserved here for the structure information. This will be included in our 
+// kernel reserved space so we don't really need to worry about it.
+#define MAX_REGIONS 32
+typedef struct {
+    uint64_t start; // Starting address of the region
+    uint64_t end; // Ending address of the region
+    uint64_t pages; // # of pages the region can hold
+} region_t;
+
+static uint8_t num_regions;
+region_t region_info[MAX_REGIONS];
+
 // Initialize the kernel memory map
 void initialize_memmap(struct limine_memmap_response *r, uint64_t offset) {
     hhdmoff = offset;
     map = r;
+    CHASSERT(r->entry_count <= MAX_REGIONS && "Memory map has more regions than we can track!");
+    uint8_t region_idx = 0;
     for (uint64_t i = 0; i < r->entry_count; i++) {
         struct limine_memmap_entry* e = r->entries[i];
         // Fancy print the type
         const char* type;
         switch(e->type) {
+            // If usable we will add as region.
             case LIMINE_MEMMAP_USABLE:
                 type = "Usable";
                 init_free_space += e->length;
+                region_info[region_idx++] = (region_t){e->base, e->base+e->length, e->length / FRAME_ALLOCATION_SIZE};
                 break;
             case LIMINE_MEMMAP_RESERVED:
                 type = "Reserved";
@@ -64,13 +80,15 @@ void initialize_memmap(struct limine_memmap_response *r, uint64_t offset) {
         ((init_free_space*100)/1073741824)/100, ((init_free_space*100)/1073741824)%100,
         max_frames);
 
+    num_regions = region_idx;
+
     // Parse and shove bitmap somewhere
-    parse_memmap();
+    locate_for_bitmap();
     initialize_bitmap();
 }
 // Helper function to parse out the memory map into structures and values we
 // need.
-static void parse_memmap() {
+static void locate_for_bitmap() {
     CHASSERT(map && "Memory map read failed!");
     /*
     Our bitmap will use some bit packing. We will use quartets of bits per-frame.    
@@ -82,84 +100,51 @@ static void parse_memmap() {
         ||___ privileged - whether or not kernel vs user owns this frame
         |____ free       - whether or not the frame is available for use
     */
-    bytes_needed = (max_frames + 1) / 2; // ( +1)/2 to account for any odd-numbers of pages required.
+    bitmap_length = max_frames >> 1; // div by 2 (2 frames per byte). 
+    // Don't care about odd/2 because it's fine if we're missing 1 page of memory to use.
+
+    uint8_t usable_idx = 0;
     for (uint64_t i = 0; i < map->entry_count; i++) {
         const struct limine_memmap_entry* e = map->entries[i];
-// TODO: need to also grab bootloader-reclaimable. Worry about it later I guess, lol.
-        if (e->type == LIMINE_MEMMAP_USABLE && e->length >= bytes_needed) {
-            frame_map = (uint8_t*)e->base;
-            break;
+
+        // Find a USABLE block of memory that also
+        // is big enough to put the bitmap.
+        if (e->type == LIMINE_MEMMAP_USABLE) {
+            if (e->length >= bitmap_length) {
+                frame_map = (uint8_t*)e->base;
+                // The memory region we install the bitmap onto must be
+                // adjusted in the region information to account for the fact
+                // that not all pages in the region are usable memory (due to the bitmap).
+                // We need start to be page-aligned so guarantee that.
+                region_info[usable_idx].start += bitmap_length;
+                region_info[usable_idx].start = pg_round_up(region_info[usable_idx].start);
+                region_info[usable_idx].pages = (region_info[usable_idx].end - region_info[usable_idx].start) / FRAME_ALLOCATION_SIZE;
+            }
+            usable_idx++;
         }
     }
     CHASSERT(frame_map && "Couldn't find a memmap region that had enough space for the frame bitmap!");
     frame_map += hhdmoff;
-    logf(INFO, "Frame map beginning at 0x%lx, occupying %lx (%ld) bytes\n", frame_map, bytes_needed, bytes_needed);
+    logf(INFO, "Frame map beginning at 0x%lx, occupying %lx (%ld) bytes\n", frame_map, bitmap_length, bitmap_length);
 }
-// Initializes the bitmap by identifying where among the memmap we can put
-// enough data to store the bitmap.
+// Initializes the bitmap for all frames
 static void initialize_bitmap() {
-    CHASSERT(frame_map && "Frame map wasn't initialized! Make sure initialize_memmap() is called!");
+    CHASSERT(frame_map && "Frame map wasn't initialized! Make sure locate_for_bitmap() is called!");
 
-    memset(frame_map, 0, bytes_needed);
-
-    // We need to set the frame info for all frames of physical memory we own
-    uint64_t index = 0;
-    uint64_t subindex = 0;
-
-    for (uint64_t i = 0; i < map->entry_count; i++) {
-        const struct limine_memmap_entry* e = map->entries[i];
-        if (e->type == LIMINE_MEMMAP_USABLE) {
-            // For all pages in this region...
-            for (uint64_t j = e->base; j < e->base + e->length; j += FRAME_ALLOCATION_SIZE) {
-                // Because we operate on nibbles we need to shift the flags
-                // every odd page.
-                frame_map[index] |= MAKE_FLAGS(AVAIL) << (subindex << 2);
-
-                index = index + (subindex & 1);
-                subindex = (subindex + 1) % 2; // roll-over counter for nibbles
-            }
-        } else if (e->type == LIMINE_MEMMAP_KERNEL_AND_MODULES) { // Special case kernel memory
-            for (uint64_t j = e->base; j < e->base + e->length; j += FRAME_ALLOCATION_SIZE) {
-                frame_map[index] |= MAKE_FLAGS(AVAIL | PINNED | PRIVILEGED) << (subindex << 2);
-                index = index + (subindex & 1);
-                subindex = (subindex + 1) % 2; // roll-over counter for nibbles
-            }
-        } else { // Otherwise don't care about the type, it's reserved and we shouldn't interact with it
-            for (uint64_t j = e->base; j < e->base + e->length; j += FRAME_ALLOCATION_SIZE) {
-                frame_map[index] |= MAKE_FLAGS(INVALID) << (subindex << 2);
-                index = index + (subindex & 1);
-                subindex = (subindex + 1) % 2; // roll-over counter for nibbles
-            }
-        }
+    // Since we only ever consider usable pages of memory when we initially construct the bitmap,
+    // all pages should never be considered invalid.
+    // Initially all pages will be available.
+    const uint8_t set = (MAKE_FLAGS(AVAIL) << 4) + MAKE_FLAGS(AVAIL);
+    for (uint32_t i = 0; i < bitmap_length; i++) {
+        frame_map[i] = set;
     }
-    logf(INFO, "Setup frame bitmap!\n");
 }
 // Returns some physical frame.
 void *frame_alloc() {
-    static uint64_t next_open_idx = 0;
-    static uint64_t next_open_subidx = 0;
-
-    uint64_t attempts = 0;
-    
-    uint8_t entry = 0;
-    while (true) {
-        entry = (frame_map[next_open_idx] >> (next_open_subidx << 2)) & 0xF;
-        CHASSERT((attempts > 2*max_frames) && "Iterated over entire frame map twice and failed to find any available frame.");
-        // Invalid frame?
-        if (entry & INVALID) {
-            next_open_idx = next_open_idx + (next_open_subidx & 1);
-            next_open_subidx = (next_open_subidx + 1) % 2;
-        }
-        // Available?
-        else if (entry & AVAIL) {
-            next_open_idx = next_open_idx + (next_open_subidx & 1);
-            next_open_subidx = (next_open_subidx + 1) % 2;
-            attempts++;
-            break;
-        }
-    }
+    NOT_IMPL();
+    return NULL;
 }
 // Frees a frame.
 void frame_free(void* paddr) {
-
+    NOT_IMPL();
 }

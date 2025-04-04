@@ -9,10 +9,20 @@
 inline uint64_t v2p(uint64_t vaddr);
 inline uint64_t p2v(uint64_t paddr);
 
-// Initialize the kernel memory map
+/* Round up to nearest page boundary. */
+static inline uint64_t pg_round_up (const uint64_t va) {
+  return (((uint64_t) va + FRAME_ALLOCATION_SIZE - 1) & ~(FRAME_ALLOCATION_SIZE-1));
+}
+
+/* Round down to nearest page boundary. */
+static inline uint64_t pg_round_down (const uint64_t va) {
+  return ((uint64_t) va & ~(FRAME_ALLOCATION_SIZE-1));
+}
+
+// Initialize and read the kernel memory map
 void        initialize_memmap(struct limine_memmap_response* r, uint64_t offset);
-// Helper function to parse out the memory map into structures and values we need.
-static void parse_memmap();
+
+static void locate_for_bitmap();
 // Initializes the bitmap by identifying where among the memmap we can put enough
 // data to store the bitmap.
 static void initialize_bitmap();

@@ -42,14 +42,15 @@ exec: $(BUILD_DIR) $(OBJS)
 # Limine config
 	cp -v $(BUILD_DIR)/$(PROJ_NAME).bin $(ISO_DIR)/boot/
 	mkdir -p $(ISO_DIR)/boot/limine
-	cp -v $(SRC_DIR)/limine_bin/limine-bios-cd.bin $(ISO_DIR)/boot/limine/
-	cp -v $(SRC_DIR)/limine_bin/limine-uefi-cd.bin $(ISO_DIR)/boot/limine/
-	cp -v $(SRC_DIR)/limine_bin/limine-bios.sys $(ISO_DIR)/boot/limine/
-	cp -v $(SRC_DIR)/limine_bin/limine.conf $(ISO_DIR)/boot/limine/
+	cp $(SRC_DIR)/limine_bin/limine-bios-cd.bin $(ISO_DIR)/boot/limine/
+	cp $(SRC_DIR)/limine_bin/limine-uefi-cd.bin $(ISO_DIR)/boot/limine/
+	cp $(SRC_DIR)/limine_bin/limine-bios.sys $(ISO_DIR)/boot/limine/
+	cp $(SRC_DIR)/limine_bin/limine.conf $(ISO_DIR)/boot/limine/
 # Limine boot
 	mkdir -p $(ISO_DIR)/EFI/BOOT
 	cp -v $(SRC_DIR)/limine_bin/BOOTIA32.EFI $(ISO_DIR)/EFI/BOOT/
 	cp -v $(SRC_DIR)/limine_bin/BOOTX64.EFI $(ISO_DIR)/EFI/BOOT/
+	cp $(SRC_DIR)/limine_bin/cheddar.jpg $(ISO_DIR)/
 # Make disk image
 	xorriso -as mkisofs -R -r -J -b /boot/limine/limine-bios-cd.bin \
         -no-emul-boot -boot-load-size 4 -boot-info-table -hfsplus \

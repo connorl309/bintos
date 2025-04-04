@@ -13,3 +13,6 @@
         logf(ERROR, "Assertion \'" #expr "\' failed %s:%d, halting processor", __FILE__, __LINE__); \
         hcf(); \
     }
+
+#define NOT_IMPL()  \
+    CHASSERT(false && "Not implemented!")
