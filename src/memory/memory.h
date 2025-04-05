@@ -118,10 +118,17 @@ typedef struct __attribute__((packed, aligned(8))) {
     uint64_t pat : 1;
     uint64_t g : 1;
     uint64_t avail : 3; // useless
-    uint64_t paddr : 40;
+    uint64_t frame : 40;
     uint64_t dummy : 7; // useless
     uint64_t dummy2 : 4;
     uint64_t nx : 1;
 } pte;
+
+// Reads the cr2 register.
+static inline uint64_t read_cr2() {
+    uint64_t cr2;
+    asm ("movl %%cr2, %0" : "=r"(cr2));
+    return cr2;
+}
 
 void        initialize_paging(struct limine_memmap_response* r);

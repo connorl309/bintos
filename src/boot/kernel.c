@@ -51,9 +51,6 @@ void kmain(void) {
 
     puts("Please work");
 
-    // Shouldn't get past this
-    while (1) {}
-
     // We're done, just hang...
     cli();
     hcf();
