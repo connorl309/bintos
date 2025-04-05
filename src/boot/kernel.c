@@ -47,6 +47,8 @@ void kmain(void) {
 
     initialize_memmap(memmap_request.response, hhdm_offset);
 
+    initialize_paging(memmap_request.response);
+
     puts("Please work");
 
     // Shouldn't get past this

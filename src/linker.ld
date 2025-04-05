@@ -60,6 +60,9 @@ SECTIONS
         *(COMMON)
     } :data
 
+    . = ALIGN(CONSTANT(MAXPAGESIZE));
+    KERNEL_END = .;
+
     /* Discard .eh_frame* since they may cause issues on some hosts. */
     /DISCARD/ : {
         *(.eh_frame*)

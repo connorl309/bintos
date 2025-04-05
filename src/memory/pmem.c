@@ -23,6 +23,7 @@ inline uint64_t v2p(const uint64_t vaddr) {
 inline uint64_t p2v(const uint64_t paddr) {
     return paddr + hhdmoff;
 }
+inline uint64_t get_hhdmoff() { return hhdmoff; }
 
 // Set a frame's flags
 static void set_frame_flags(uint64_t frame_no, uint8_t flags) {
@@ -56,6 +57,8 @@ static uint8_t get_frame_flags(uint64_t frame_no) {
     local &= 0xF << (!(frame_no & 1) << 2);
     return local >> (!(frame_no & 1) << 2);
 }
+
+inline uint64_t get_max_frames() { return max_frames; }
 
 // We have a page of memory reserved here for the structure information. This will be included in our 
 // kernel reserved space so we don't really need to worry about it.
@@ -178,9 +181,15 @@ static void initialize_bitmap() {
 static uint64_t index = 0;
 uint64_t frame_alloc() {
 
+    // special case for now 
+    if (index >= max_frames)
+        return -1;
+
     uint8_t flag = get_frame_flags(index);
     while (!(flag & AVAIL)) {
+#ifdef MORE_DEBUG
         logf(DEBUG, "idx=%ld, flag=%x\n", index, flag);
+#endif
         index++;
         flag = get_frame_flags(index);
         CHASSERT(index < max_frames && "Iterated too much trying to allocate a frame! No eviction yet.");
@@ -201,13 +210,16 @@ uint64_t frame_alloc() {
         // exceeds the remaining number of pages we need to iterate through
         // to get to `index`, then the current region is where we will
         // allocate.
-        if ((signed)(copy - (int64_t)region_info[map_idx].pages) < 0) {
-            start = region_info[map_idx].start;
-            break;
-        } else {
+
+// TODO: Part of this logic is broken.
+// VM Page Table init fails for i=0, j=7, k=502, l=<varies>
+        if ((signed)copy >= region_info[map_idx].pages) {
             copy -= region_info[map_idx].pages;
             map_idx++;
-            CHASSERT(map_idx < num_regions && "Iterated out of bounds for region identification");
+            CHASSERT(map_idx < num_regions && "Went out of bounds for frame allocation on the map index!");
+        } else {
+            start = region_info[map_idx].start;
+            break;
         }
     }
     uint64_t addr = start + ((unsigned)copy * FRAME_ALLOCATION_SIZE);

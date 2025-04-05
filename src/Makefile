@@ -24,7 +24,7 @@ AS := nasm
 CC := ${cc_TARGET}-gcc
 ASFLAGS := -felf32 # Important!
 CFLAGS := -m64 -std=gnu99 -g -ffreestanding -Wall -Wextra -Wno-int-conversion -fno-stack-protector -fno-stack-check -mno-mmx -mno-sse -mno-red-zone -mcmodel=kernel
-QEMU_FLAGS = -cdrom $(PROJ_NAME).iso -s -D ./debug.log -d int,cpu_reset -serial file:output.log
+QEMU_FLAGS = -cpu qemu64 -cdrom $(PROJ_NAME).iso -s -D ./debug.log -d int,cpu_reset -serial file:output.log
 LDFLAGS := -T linker.ld -o $(BUILD_DIR)/$(PROJ_NAME).elf -ffreestanding -nostdlib -m64 -z max-page-size=0x1000
 
 # Default target
@@ -32,7 +32,8 @@ all: exec
 
 gdb: QEMU_FLAGS += -S
 gdb: debug
-debug: CFLAGS += -g3 -DMORE_DEBUG
+debug: CFLAGS += -g3
+debug: QEMU_FLAGS += -no-reboot -no-shutdown
 debug: all
 
 exec: $(BUILD_DIR) $(OBJS)

@@ -1,6 +1,6 @@
 #pragma once
 
-#define MORE_DEBUG
+// #define MORE_DEBUG
 
 #include <stdint.h>
 #include "lib/stdlib.h"
@@ -18,3 +18,4 @@
 
 #define NOT_IMPL()  \
     CHASSERT(false && "Not implemented!")
+
