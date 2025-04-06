@@ -18,4 +18,3 @@
 
 #define NOT_IMPL()  \
     CHASSERT(false && "Not implemented!")
-

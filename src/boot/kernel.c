@@ -2,6 +2,8 @@
 #include "../serial/serial.h"
 #include "../resources/font/font.h"
 #include "../memory/memory.h"
+#include "../int/interrupts.h"
+#include "../int/timer.h"
 
 // Limine requests kept in this file
 #include "requests.h"
@@ -9,6 +11,7 @@
 
 extern void* FRAME_START;
 static uint64_t hhdm_offset;
+uint64_t ticks = 0;
 
 // The following will be our kernel's entry point.
 // If renaming kmain() to something else, make sure to change the
@@ -30,6 +33,8 @@ void kmain(void) {
         logf(INFO, "Serial enabled on COM1\n");
     }
 
+    initialize_exceptions();
+
     // Fetch the first framebuffer.
     struct limine_framebuffer *framebuffer = framebuffer_request.response->framebuffers[0];
     struct limine_file* kernel = kernel_request.response->kernel_file;
@@ -47,11 +52,12 @@ void kmain(void) {
 
     initialize_memmap(memmap_request.response, hhdm_offset);
 
-    initialize_paging(memmap_request.response);
+    //initialize_paging(memmap_request.response);
 
     puts("Please work");
 
     // We're done, just hang...
+    logf(WARN, "Reached end of kernel code. Hanging.\n");
     cli();
     hcf();
 }

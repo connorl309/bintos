@@ -49,13 +49,13 @@ typedef struct {
 
 /* Interrupt stack frame. */
 typedef struct {
-	//uint64_t gs, fs, es, ds;      /* pushed the segs last */
-    uint64_t rdi, rsi, rbp, dummy, rbx, rdx, rcx, rax;  /* pushed by 'pusha' */
+    uint64_t r15, r14, r13, r12, r11, r10, r9, r8;
+    uint64_t rdi, rsi, rbp, rdx, rcx, rbx, rax;  /* pushed by us */
     uint64_t vec_no, err_code;    /* our 'push byte #' and ecodes do this */
     uint64_t rip, cs, eflags, rsp, ss;   /* pushed by the processor automatically */ 
 } intr_frame;
 
-__attribute__((noreturn)) void exception_handler(intr_frame* fr);
+__attribute__((noreturn)) void exception_handler();
 
 #define INTR_CNT 256
 
@@ -64,6 +64,8 @@ __attribute__((noreturn)) void exception_handler(intr_frame* fr);
 void intr_enable();
 // Disable interrupts
 void intr_disable();
+void initialize_exceptions();
+void initialize_interrupts();
 
 // PIC specifics
 void pic_init();

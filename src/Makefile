@@ -22,7 +22,7 @@ OBJS := $(OBJS:$(SRC_DIR)/%.c=$(BUILD_DIR)/%.o)
 # Compiler, assembler, and linker
 AS := nasm
 CC := ${cc_TARGET}-gcc
-ASFLAGS := -felf32 # Important!
+ASFLAGS := -felf64 -g # Important!
 CFLAGS := -m64 -std=gnu99 -g -ffreestanding -Wall -Wextra -Wno-int-conversion -fno-stack-protector -fno-stack-check -mno-mmx -mno-sse -mno-red-zone -mcmodel=kernel
 QEMU_FLAGS = -cpu qemu64 -cdrom $(PROJ_NAME).iso -s -D ./debug.log -d int,cpu_reset -serial file:output.log
 LDFLAGS := -T linker.ld -o $(BUILD_DIR)/$(PROJ_NAME).elf -ffreestanding -nostdlib -m64 -z max-page-size=0x1000
@@ -30,6 +30,8 @@ LDFLAGS := -T linker.ld -o $(BUILD_DIR)/$(PROJ_NAME).elf -ffreestanding -nostdli
 # Default target
 all: exec
 
+super-gdb: CFLAGS += -DMORE_DEBUG 
+super-gdb: gdb
 gdb: QEMU_FLAGS += -S
 gdb: debug
 debug: CFLAGS += -g3

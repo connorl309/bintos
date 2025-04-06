@@ -5,28 +5,84 @@ extern exception_handler
 %macro exception_err_stub 1
 exception_stub_%+%1:
     push byte %1
-    pusha
-    mov rax, rsp   ; Push us the stack
+    ; for some reason 64 bit doesnt support pusha/popa so we gotta do it manually,
+    ; as well as the extended registers for 64 bit. (eventually, don't think I need them rn...?)
     push rax
-    mov rax, exception_handler
-    call rax       ; A special call, preserves the 'rip' register
+    push rbx
+    push rcx
+    push rdx
+    push rbp
+    push rsi
+    push rdi
+    push r8
+    push r9
+    push r10
+    push r11
+    push r12
+    push r13
+    push r14
+    push r15
+    ; I'm gonna go crazy, where the fuck is this argument coming from?
+    mov r15, rsp
+    call exception_handler       ; A special call, preserves the 'rip' register
+    pop r15
+    pop r14
+    pop r13
+    pop r12
+    pop r11
+    pop r10
+    pop r9
+    pop r8
+    pop rdi
+    pop rsi
+    pop rbp
+    pop rdx
+    pop rcx
+    pop rbx
     pop rax
-    popa
     add rsp, 8     ; Cleans up the pushed error code and pushed ISR number
     iretq          ; pops 5 things at once: CS, EIP, EFLAGS, SS, and ESP!
 
 %endmacro
 %macro exception_no_err_stub 1
 exception_stub_%+%1:
-    push 0      ; maintain stack alignment
+    push 0 ; dummy to maintain align
     push byte %1
-    pusha
-    mov rax, rsp   ; Push us the stack
+    ; for some reason 64 bit doesnt support pusha/popa so we gotta do it manually,
+    ; as well as the extended registers for 64 bit. (eventually, don't think I need them rn...?)
     push rax
-    mov rax, exception_handler
-    call rax       ; A special call, preserves the 'rip' register
+    push rbx
+    push rcx
+    push rdx
+    push rbp
+    push rsi
+    push rdi
+    push r8
+    push r9
+    push r10
+    push r11
+    push r12
+    push r13
+    push r14
+    push r15
+    ; I'm gonna go crazy, where the fuck is this argument coming from?
+    mov r15, rsp
+    call exception_handler       ; A special call, preserves the 'rip' register
+    pop r15
+    pop r14
+    pop r13
+    pop r12
+    pop r11
+    pop r10
+    pop r9
+    pop r8
+    pop rdi
+    pop rsi
+    pop rbp
+    pop rdx
+    pop rcx
+    pop rbx
     pop rax
-    popa
     add rsp, 8     ; Cleans up the pushed error code and pushed ISR number
     iretq          ; pops 5 things at once: CS, EIP, EFLAGS, SS, and ESP!
 

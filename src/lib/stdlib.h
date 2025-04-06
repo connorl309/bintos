@@ -12,6 +12,8 @@ int memcmp(const void *s1, const void *s2, size_t n);
 void hcf(void);
 // Disable interrupts
 void cli(void);
+// Enable interrupts
+void sti(void);
 
 #define LOGGING_ENABLED 1 // Set this to 0 to disable logs
 

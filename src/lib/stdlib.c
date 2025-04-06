@@ -57,8 +57,11 @@ void hcf(void) {
     }
 }
 
-void cli(void) {
-    asm ("cli");
+inline void cli(void) {
+    asm volatile ("cli" : : : "memory");
+}
+inline void sti(void) {
+    asm volatile ("sti");
 }
 
 // Logging over serial
