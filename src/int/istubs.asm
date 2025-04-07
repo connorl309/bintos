@@ -24,7 +24,7 @@ exception_stub_%+%1:
     push r15
     ; I'm gonna go crazy, where the fuck is this argument coming from?
     mov r15, rsp
-    call exception_handler       ; A special call, preserves the 'rip' register
+    call exception_handler
     pop r15
     pop r14
     pop r13
@@ -66,8 +66,10 @@ exception_stub_%+%1:
     push r14
     push r15
     ; I'm gonna go crazy, where the fuck is this argument coming from?
+    ; Some goofy compiler shit screws the stack pointer even with correct
+    ; cflags. I'm giving up.
     mov r15, rsp
-    call exception_handler       ; A special call, preserves the 'rip' register
+    call exception_handler
     pop r15
     pop r14
     pop r13
