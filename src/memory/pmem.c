@@ -100,7 +100,7 @@ void initialize_memmap(struct limine_memmap_response *r, uint64_t offset) {
                 break;
             case LIMINE_MEMMAP_BOOTLOADER_RECLAIMABLE:
                 type = "Bootloader Reclaimable";
-                init_free_space += e->length;
+                // init_free_space += e->length;
                 break;
             case LIMINE_MEMMAP_KERNEL_AND_MODULES:
                 type = "Kernel/Module";
@@ -179,7 +179,7 @@ static void initialize_bitmap() {
 // Returns some physical frame.
 // Note: this is a physical address.
 static uint64_t index = 0;
-uint64_t frame_alloc() {
+uint64_t frame_alloc(bool zeroed) {
 
     // special case for now 
     if (index >= max_frames)
@@ -187,9 +187,6 @@ uint64_t frame_alloc() {
 
     uint8_t flag = get_frame_flags(index);
     while (!(flag & AVAIL)) {
-#ifdef MORE_DEBUG
-        logf(DEBUG, "idx=%ld, flag=%x\n", index, flag);
-#endif
         index++;
         flag = get_frame_flags(index);
         CHASSERT(index < max_frames && "Iterated too much trying to allocate a frame! No eviction yet.");
@@ -210,9 +207,6 @@ uint64_t frame_alloc() {
         // exceeds the remaining number of pages we need to iterate through
         // to get to `index`, then the current region is where we will
         // allocate.
-
-// TODO: Part of this logic is broken.
-// VM Page Table init fails for i=0, j=7, k=502, l=<varies>
         if ((signed)copy >= region_info[map_idx].pages) {
             copy -= region_info[map_idx].pages;
             map_idx++;
@@ -223,10 +217,10 @@ uint64_t frame_alloc() {
         }
     }
     uint64_t addr = start + ((unsigned)copy * FRAME_ALLOCATION_SIZE);
-#ifdef MORE_DEBUG
-    logf(DEBUG, "Allocated physical memory at bitmap=%ld, 0x%lx\n", index, addr);
-#endif
     index++;
+    
+    if (zeroed)
+        memset((void*)(addr + hhdmoff), 0, FRAME_ALLOCATION_SIZE);
     // Ideally we're good here...
     // The final address will be the current start region
     // plus pgsize * remaining pages from copy.

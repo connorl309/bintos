@@ -67,6 +67,8 @@ void intr_disable();
 void initialize_exceptions();
 void initialize_interrupts();
 
+void page_fault(intr_frame* fr);
+
 // PIC specifics
 void pic_init();
 void pic_remap();

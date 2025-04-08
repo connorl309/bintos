@@ -41,6 +41,7 @@ void initialize_exceptions() {
     // intr_enable(); // We won't actually *enable* all interrupts here. The IDT is still valid
     // for exceptions without it.
     logf(INFO, "Registered exception handlers and loaded IDT!\n");
+    handlers[PAGEFAULT] = page_fault;
 }
 
 // General exception handler.

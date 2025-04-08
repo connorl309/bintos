@@ -5,6 +5,7 @@
 // Change if we want? TBD. Must be dword aligned.
 // Should probably align with the smallest page we make in VM.
 #define FRAME_ALLOCATION_SIZE 4096
+#define KERNEL_VMA 0xffffffff80000000
 
 
 inline uint64_t v2p(uint64_t vaddr);
@@ -28,7 +29,7 @@ static void locate_for_bitmap();
 // data to store the bitmap.
 static void initialize_bitmap();
 // Returns some physical frame.
-uint64_t       frame_alloc();
+uint64_t       frame_alloc(bool zeroed);
 // Frees a frame.
 void        frame_free(void* paddr);
 // Returns total number of physical frames
@@ -43,20 +44,30 @@ uint64_t get_hhdmoff();
   vm info
 
 */
+// Helper macros for extracting indices from a virtual address
+#define PML4_INDEX(vaddr) (((vaddr) >> 39) & 0x1FF)
+#define PDPT_INDEX(vaddr) (((vaddr) >> 30) & 0x1FF)
+#define PD_INDEX(vaddr)   (((vaddr) >> 21) & 0x1FF)
+#define PT_INDEX(vaddr)   (((vaddr) >> 12) & 0x1FF)
+
+void map_page(uint64_t vaddr, uint64_t paddr, bool is_supervisor, bool writable, bool no_execute, bool writethru);
 
 // We should probably verify this works.
 static inline uint64_t read_cr3() {
     uint64_t v;
     // inline asm: =r means destination, r means src.
-    asm volatile ("movl $0, cr3" : "=r"(v));
+    asm volatile ("mov cr3, %0" : "=r"(v));
     return v;
 }
 // This function is not friendly.
 // The address MUST be 4k aligned.
 static inline void set_cr3(uint64_t newValue) {
-    newValue = pg_round_down(newValue);
-    asm volatile ("movl $rax, $$0" : : "r" (newValue) : "rax");
-    asm volatile ("movl $cr3, $rax");
+    CHASSERT(pg_round_down(newValue) == newValue && "Value to set in CR3 is not page-aligned!");
+    asm volatile ("mov %0, %%cr3"
+    :
+    : "r" (newValue)
+    : "memory"
+);
 }
 
 typedef struct __attribute__((packed, aligned(8))) {
@@ -127,8 +138,8 @@ typedef struct __attribute__((packed, aligned(8))) {
 // Reads the cr2 register.
 static inline uint64_t read_cr2() {
     uint64_t cr2;
-    asm ("movl %%cr2, %0" : "=r"(cr2));
+    asm ("mov %%cr2, %0" : "=r"(cr2));
     return cr2;
 }
 
-void        initialize_paging(struct limine_memmap_response* r);
+void initialize_paging(struct limine_memmap_response* r, struct limine_file* kr, const struct limine_kernel_address_response* r2);

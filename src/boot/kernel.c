@@ -52,10 +52,20 @@ void kmain(void) {
 
     initialize_memmap(memmap_request.response, hhdm_offset);
 
-    //initialize_paging(memmap_request.response);
+    // Now we need to begin mapping virtual memory for specific sections we care about.
+    // This includes the framebuffer and the kernel regions. Anything else can be
+    // mapped on the fly.
+
+    // Since we have control of VM,
+    // we know for a fact what components of memory we need and
+    // how the translation process works. The issue is when we want to handle
+    // dynamic page faults we need to start allocating. 
+    // We have the kernel space and framebuffer pre-reserved from the bootloader,
+    // so no pallocs will need to happen there.
+    const struct limine_kernel_address_response* r = addr_request.response;
+    initialize_paging(memmap_request.response, kernel, r);
 
     puts("Please work");
-
     // We're done, just hang...
     logf(WARN, "Reached end of kernel code. Hanging.\n");
     cli();
