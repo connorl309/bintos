@@ -26,13 +26,19 @@ extern uint64_t KERNEL_END;
 uint64_t pml4_addr;
 
 // Set up PML4 and identity map the kernel and framebuffer.
-void initialize_paging(struct limine_memmap_response* r, struct limine_file* kr, const struct limine_kernel_address_response* r2) {
+// AMD64 Vol2 5.6.2 - Protection bits are checked at ALL levels for any given access.
+void initialize_paging(struct limine_memmap_response* r, struct limine_file* kr, const struct limine_kernel_address_response* r2, uint64_t rsp) {
     // We'll have to put PML4 in some dedicated physical address.
     // Initially zeroed-out.
     // PML4 itself has to be physically mapped as well.
     pml4_addr = frame_alloc(true);
     pml4e* table = (pml4e*)(pml4_addr + get_hhdmoff());
-    map_page((uint64_t)table, pml4_addr, false, true, true, false);
+    map_page((uint64_t)table, pml4_addr, true, true, true, false);
+
+    // Map stack pages
+    for (uint64_t bytes = 0; bytes < 16 * FRAME_ALLOCATION_SIZE; bytes += FRAME_ALLOCATION_SIZE) {
+        map_page(pg_round_down(rsp - bytes), pg_round_down(rsp - get_hhdmoff() - bytes), true, true, true, false);
+    }
 
     // We need the memmap for framebuffer (but can be refactored)
     for (uint8_t i = 0; i < r->entry_count; i++) {
@@ -69,10 +75,11 @@ void map_page(uint64_t vaddr, uint64_t paddr, bool is_supervisor, bool writable,
     if (!pml4table[PML4_INDEX(vaddr)].present) {
         pdpt = frame_alloc(true);
         pml4table[PML4_INDEX(vaddr)].present = true;
-        pml4table[PML4_INDEX(vaddr)].pdpe_ptr = pdpt;
+        pml4table[PML4_INDEX(vaddr)].rw = true;
+        pml4table[PML4_INDEX(vaddr)].pdpe_ptr = pdpt >> 12;
         pdpt += get_hhdmoff();
     } else {
-        pdpt = pml4table[PML4_INDEX(vaddr)].pdpe_ptr + get_hhdmoff();
+        pdpt = (pml4table[PML4_INDEX(vaddr)].pdpe_ptr << 12) + get_hhdmoff();
     }
 
     pdpe* pdptable = (pdpe*)pdpt;
@@ -80,10 +87,11 @@ void map_page(uint64_t vaddr, uint64_t paddr, bool is_supervisor, bool writable,
     if (!pdptable[PDPT_INDEX(vaddr)].present) {
         pd = frame_alloc(true);
         pdptable[PDPT_INDEX(vaddr)].present = true;
-        pdptable[PDPT_INDEX(vaddr)].pde_ptr = pd;
+        pdptable[PDPT_INDEX(vaddr)].rw = true;
+        pdptable[PDPT_INDEX(vaddr)].pde_ptr = pd >> 12;
         pd += get_hhdmoff();
     } else {
-        pd = pdptable[PDPT_INDEX(vaddr)].pde_ptr + get_hhdmoff();
+        pd = (pdptable[PDPT_INDEX(vaddr)].pde_ptr << 12) + get_hhdmoff();
     }
 
     pde* pdetable = (pde*)pd;
@@ -91,17 +99,21 @@ void map_page(uint64_t vaddr, uint64_t paddr, bool is_supervisor, bool writable,
     if (!pdetable[PD_INDEX(vaddr)].present) {
         pt = frame_alloc(true);
         pdetable[PD_INDEX(vaddr)].present = true;
-        pdetable[PD_INDEX(vaddr)].pte_ptr = pt;
+        pdetable[PD_INDEX(vaddr)].pte_ptr = pt >> 12;
+        pdetable[PD_INDEX(vaddr)].rw = true;
         pt += get_hhdmoff();
     } else {
-        pt = pdetable[PD_INDEX(vaddr)].pte_ptr + get_hhdmoff();
+        pt = (pdetable[PD_INDEX(vaddr)].pte_ptr << 12) + get_hhdmoff();
     }
 
     pte* ptable = (pte*)pt;
     ptable[PT_INDEX(vaddr)].present = 1;
     ptable[PT_INDEX(vaddr)].rw = writable;
     ptable[PT_INDEX(vaddr)].us = is_supervisor;
-    ptable[PT_INDEX(vaddr)].pwt = writethru;
-    ptable[PT_INDEX(vaddr)].nx = !no_execute;
+    // The PTE specifically is what will be configured for read/writable or not.
+    // The translation mechanism will perform a logical AND on ALL protection bits
+    // along the way to the PTE.
+    ptable[PT_INDEX(vaddr)].pwt = writethru; 
+    ptable[PT_INDEX(vaddr)].nx = no_execute;
     ptable[PT_INDEX(vaddr)].frame = paddr >> 12;
 }

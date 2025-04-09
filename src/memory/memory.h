@@ -142,4 +142,4 @@ static inline uint64_t read_cr2() {
     return cr2;
 }
 
-void initialize_paging(struct limine_memmap_response* r, struct limine_file* kr, const struct limine_kernel_address_response* r2);
+void initialize_paging(struct limine_memmap_response* r, struct limine_file* kr, const struct limine_kernel_address_response* r2, uint64_t rsp);

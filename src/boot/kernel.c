@@ -3,11 +3,52 @@
 #include "../resources/font/font.h"
 #include "../memory/memory.h"
 #include "../int/interrupts.h"
-#include "../int/timer.h"
 
 // Limine requests kept in this file
-#include "requests.h"
-// Please don't modify where it is relative to kmain : )
+#include "../limine.h"
+
+// Limine request list
+__attribute__((used, section(".limine_requests_start")))
+static volatile LIMINE_REQUESTS_START_MARKER;
+
+__attribute__((used, section(".limine_requests")))
+static volatile LIMINE_BASE_REVISION(3);
+
+// Framebuffer
+__attribute__((used, section(".limine_requests")))
+static volatile struct limine_framebuffer_request framebuffer_request = {
+    .id = LIMINE_FRAMEBUFFER_REQUEST,
+    .revision = 0
+};
+
+// HHDM for memory mapping later
+__attribute__((used, section(".limine_requests")))
+static volatile struct limine_hhdm_request hhdm_request = {
+    .id = LIMINE_HHDM_REQUEST,
+    .revision = 0
+};
+
+// Memory map
+__attribute__((used, section(".limine_requests")))
+static volatile struct limine_memmap_request memmap_request = {
+    .id = LIMINE_MEMMAP_REQUEST,
+    .revision = 0
+};
+
+__attribute__((used, section(".limine_requests")))
+static volatile struct limine_kernel_file_request kernel_request = {
+    .id = LIMINE_KERNEL_FILE_REQUEST,
+    .revision = 0
+};
+
+__attribute__((used, section(".limine_requests")))
+static volatile struct limine_kernel_address_request addr_request = {
+    .id = LIMINE_KERNEL_ADDRESS_REQUEST,
+    .revision = 0
+};
+
+__attribute__((used, section(".limine_requests_end")))
+static volatile LIMINE_REQUESTS_END_MARKER;// Please don't modify where it is relative to kmain : )
 
 extern void* FRAME_START;
 static uint64_t hhdm_offset;
@@ -17,6 +58,8 @@ uint64_t ticks = 0;
 // If renaming kmain() to something else, make sure to change the
 // linker script accordingly.
 void kmain(void) {
+    uint64_t rsp;
+    asm volatile ("mov %%rsp, %0" : "=r"(rsp));
     // Ensure the bootloader actually understands our base revision (see spec).
     if (LIMINE_BASE_REVISION_SUPPORTED == false) {
         hcf();
@@ -62,8 +105,7 @@ void kmain(void) {
     // dynamic page faults we need to start allocating. 
     // We have the kernel space and framebuffer pre-reserved from the bootloader,
     // so no pallocs will need to happen there.
-    const struct limine_kernel_address_response* r = addr_request.response;
-    initialize_paging(memmap_request.response, kernel, r);
+    initialize_paging(memmap_request.response, kernel, addr_request.response, rsp);
 
     puts("Please work");
     // We're done, just hang...
