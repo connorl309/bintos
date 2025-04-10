@@ -4,51 +4,7 @@
 #include "../memory/memory.h"
 #include "../int/interrupts.h"
 
-// Limine requests kept in this file
-#include "../limine.h"
-
-// Limine request list
-__attribute__((used, section(".limine_requests_start")))
-static volatile LIMINE_REQUESTS_START_MARKER;
-
-__attribute__((used, section(".limine_requests")))
-static volatile LIMINE_BASE_REVISION(3);
-
-// Framebuffer
-__attribute__((used, section(".limine_requests")))
-static volatile struct limine_framebuffer_request framebuffer_request = {
-    .id = LIMINE_FRAMEBUFFER_REQUEST,
-    .revision = 0
-};
-
-// HHDM for memory mapping later
-__attribute__((used, section(".limine_requests")))
-static volatile struct limine_hhdm_request hhdm_request = {
-    .id = LIMINE_HHDM_REQUEST,
-    .revision = 0
-};
-
-// Memory map
-__attribute__((used, section(".limine_requests")))
-static volatile struct limine_memmap_request memmap_request = {
-    .id = LIMINE_MEMMAP_REQUEST,
-    .revision = 0
-};
-
-__attribute__((used, section(".limine_requests")))
-static volatile struct limine_kernel_file_request kernel_request = {
-    .id = LIMINE_KERNEL_FILE_REQUEST,
-    .revision = 0
-};
-
-__attribute__((used, section(".limine_requests")))
-static volatile struct limine_kernel_address_request addr_request = {
-    .id = LIMINE_KERNEL_ADDRESS_REQUEST,
-    .revision = 0
-};
-
-__attribute__((used, section(".limine_requests_end")))
-static volatile LIMINE_REQUESTS_END_MARKER;// Please don't modify where it is relative to kmain : )
+#include "requests.h"
 
 extern void* FRAME_START;
 static uint64_t hhdm_offset;
@@ -97,15 +53,18 @@ void kmain(void) {
 
     // Now we need to begin mapping virtual memory for specific sections we care about.
     // This includes the framebuffer and the kernel regions. Anything else can be
-    // mapped on the fly.
-
-    // Since we have control of VM,
+    // mapped on the fly. Since we have control of VM,
     // we know for a fact what components of memory we need and
     // how the translation process works. The issue is when we want to handle
     // dynamic page faults we need to start allocating. 
     // We have the kernel space and framebuffer pre-reserved from the bootloader,
     // so no pallocs will need to happen there.
     initialize_paging(memmap_request.response, kernel, addr_request.response, rsp);
+    // The kernel + framebuffer + stack are all mapped according to what Limine gave us,
+    // i.e., the virtual addresses remain unchanged.
+
+    // We are going to ignore interrupts for now. Teehee.
+    // Device tree comes later as well.
 
     puts("Please work");
     // We're done, just hang...

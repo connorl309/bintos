@@ -7,10 +7,6 @@
 #define FRAME_ALLOCATION_SIZE 4096
 #define KERNEL_VMA 0xffffffff80000000
 
-
-inline uint64_t v2p(uint64_t vaddr);
-inline uint64_t p2v(uint64_t paddr);
-
 /* Round up to nearest page boundary. */
 static inline uint64_t pg_round_up (const uint64_t va) {
     return (((uint64_t) va + FRAME_ALLOCATION_SIZE - 1) & ~(FRAME_ALLOCATION_SIZE-1));

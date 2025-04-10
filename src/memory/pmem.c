@@ -179,6 +179,7 @@ static void initialize_bitmap() {
 // Returns some physical frame.
 // Note: this is a physical address.
 static uint64_t index = 0;
+static uint64_t last_freed_index = 0;
 uint64_t frame_alloc(bool zeroed) {
 
     // special case for now 
@@ -228,6 +229,12 @@ uint64_t frame_alloc(bool zeroed) {
 }
 // Frees a frame.
 void frame_free(void* paddr) {
+    CHASSERT((uint64_t)paddr < KERNEL_VMA && (uint64_t)paddr < hhdmoff
+        && !((uint64_t)paddr & 0xFFF) && "Tried to free an invalid or non-page-aligned physical address!");
+    uint8_t flags = get_frame_flags((uint64_t)paddr);
+    CHASSERT((flags & AVAIL) && "Tried to free a physical frame that was already freed!");
+    flags &= ~(AVAIL);
+    set_frame_flags(uint64_t frame_no, uint8_t flags)
     NOT_IMPL();
 }
 

@@ -1,13 +1,13 @@
 #include "interrupts.h"
 
-static idt_entry_t idt[INTR_CNT];
+static idt_entry_t idt[INTR_CNT] = { 0 };
 static idtr_t idtr;
 extern void* exception_stub_table[32]; // from istubs
 // More weird C code. Callbacks for all interrupts.
 void (*handlers[INTR_CNT])(intr_frame* f) = { 0 };
 
 #define PAGEFAULT 0xE
-#define KERNEL_CS 0x28 // Looking at QEMU failure logs, we have x28?? Unsure.
+#define KERNEL_CS 0x28 // Looking at QEMU failure logs, we have 0x28 for CS.
 
 // Quick helpers for enabling/disabling interrupts as needed
 inline void intr_enable() { asm volatile ("sti"); }
@@ -80,9 +80,9 @@ void exception_handler() {
     while (1) { logf(ERROR, "Made it past HCF() in exception handler. You're fucked. F-U-C-K-E-D fucked.\n"); }
 }
 
-/* Sends an end-of-interrupt signal to the PIC for the given IRQ.
- * If we don't acknowledge the IRQ, it will never be delivered to
- * us again, so this is important.  */
+// /* Sends an end-of-interrupt signal to the PIC for the given IRQ.
+//  * If we don't acknowledge the IRQ, it will never be delivered to
+//  * us again, so this is important.  */
 void pic_eoi_ack(int irq)
 {
     CHASSERT(irq >= 0x20 && irq < 0x30);
@@ -95,3 +95,30 @@ void pic_eoi_ack(int irq)
         outb(PIC1_CTRL, 0x20);
     }
 }
+// /* Initialize and remap the PIC */
+// void pic_init (void) {
+//   /* Mask all interrupts on both PICs. */
+//   outb (PIC0_DATA, 0xff);
+//   outb (PIC1_DATA, 0xff);
+
+//   /* Initialize master. */
+//   outb (PIC0_CTRL, 0x11); /* ICW1: single mode, edge triggered, expect ICW4. */
+//   outb (PIC0_DATA, 0x20); /* ICW2: line IR0...7 -> irq 0x20...0x27. */
+//   outb (PIC0_DATA, 0x04); /* ICW3: slave PIC on line IR2. */
+//   outb (PIC0_DATA, 0x01); /* ICW4: 8086 mode, normal EOI, non-buffered. */
+
+//   /* Initialize slave. */
+//   outb (PIC1_CTRL, 0x11); /* ICW1: single mode, edge triggered, expect ICW4. */
+//   outb (PIC1_DATA, 0x28); /* ICW2: line IR0...7 -> irq 0x28...0x2f. */
+//   outb (PIC1_DATA, 0x02); /* ICW3: slave ID is 2. */
+//   outb (PIC1_DATA, 0x01); /* ICW4: 8086 mode, normal EOI, non-buffered. */
+
+//   /* Unmask all interrupts. */
+//   outb (PIC0_DATA, 0x00);
+//   outb (PIC1_DATA, 0x00);
+// }
+
+// // Configures IDT to have additional 
+// void assign_interrupt_vectors() {
+//     idt_set_descriptor(NUM_EXCEPTIONS + 0, void *isr, uint8_t flags)
+// }
